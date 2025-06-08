@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,9 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface InstagramPost {
   id: string;
   titulo: string;
-  descricao: string;
+  descricao?: string;
   url_imagem: string;
-  link_post?: string;
+  url_post?: string;
   curtidas?: number;
   comentarios?: number;
   ativo: boolean;
@@ -52,8 +51,8 @@ export const InstagramFeed = () => {
   };
 
   const handlePostClick = (post: InstagramPost) => {
-    if (post.link_post) {
-      window.open(post.link_post, '_blank');
+    if (post.url_post) {
+      window.open(post.url_post, '_blank');
     }
   };
 

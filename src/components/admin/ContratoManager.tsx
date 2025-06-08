@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { FileText, Download, Plus, Trash2 } from 'lucide-react';
 import { numberToWordsBrazilian } from '@/utils/supabaseStorage';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 interface Formulario {
   id: string;
