@@ -3,81 +3,45 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Instagram, Heart, MessageCircle, Share2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InstagramPost {
   id: string;
-  caption: string;
-  media_url: string;
-  media_type: string;
-  timestamp: string;
-  permalink: string;
+  titulo: string;
+  descricao: string;
+  url_imagem: string;
+  link_post?: string;
+  curtidas?: number;
+  comentarios?: number;
+  ativo: boolean;
+  created_at: string;
 }
 
 export const InstagramFeed = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration - in a real app, you'd fetch from Instagram API
-  const mockPosts = [
-    {
-      id: '1',
-      caption: 'Pizza margherita fresquinha saindo do forno! 🍕🔥 #juliospizzahouse #pizza #londrina',
-      media_url: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-15T18:30:00Z',
-      permalink: 'https://instagram.com/p/example1'
-    },
-    {
-      id: '2',
-      caption: 'Nosso chef preparando a massa artesanal 👨‍🍳✨ #artesanal #qualidade #londrina',
-      media_url: 'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-14T20:15:00Z',
-      permalink: 'https://instagram.com/p/example2'
-    },
-    {
-      id: '3',
-      caption: 'Pizza de pepperoni com borda recheada! Quem mais ama? ❤️🍕 #pepperoni #bordaRecheada',
-      media_url: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-13T19:45:00Z',
-      permalink: 'https://instagram.com/p/example3'
-    },
-    {
-      id: '4',
-      caption: 'Entrega especial para nossos clientes queridos! 🚗💨 #delivery #londrina #clientes',
-      media_url: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-12T21:00:00Z',
-      permalink: 'https://instagram.com/p/example4'
-    },
-    {
-      id: '5',
-      caption: 'Pizza vegetariana carregada de sabor! 🥬🍅 #vegetariana #saudavel #sabor',
-      media_url: 'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-11T18:20:00Z',
-      permalink: 'https://instagram.com/p/example5'
-    },
-    {
-      id: '6',
-      caption: 'Final de semana especial com promoção! 🎉 #promocao #fimdesemana #pizza',
-      media_url: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=400&fit=crop',
-      media_type: 'IMAGE',
-      timestamp: '2024-01-10T17:30:00Z',
-      permalink: 'https://instagram.com/p/example6'
-    }
-  ];
-
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setPosts(mockPosts);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    fetchPosts();
   }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('instagram_posts')
+        .select('*')
+        .eq('ativo', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar posts do Instagram:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -85,6 +49,12 @@ export const InstagramFeed = () => {
       day: '2-digit', 
       month: 'short' 
     });
+  };
+
+  const handlePostClick = (post: InstagramPost) => {
+    if (post.link_post) {
+      window.open(post.link_post, '_blank');
+    }
   };
 
   return (
@@ -107,7 +77,7 @@ export const InstagramFeed = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="bg-gray-800 border-gray-700 animate-pulse">
+              <Card key={i} className="bg-gray-800/50 backdrop-blur-sm border-gray-700 animate-pulse">
                 <div className="w-full h-64 bg-gray-700 rounded-t-lg"></div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
@@ -118,18 +88,18 @@ export const InstagramFeed = () => {
               </Card>
             ))}
           </div>
-        ) : (
+        ) : posts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Card 
                 key={post.id} 
-                className="bg-gray-800 border-gray-700 hover:border-pink-500/50 transition-all duration-300 hover:scale-105 group cursor-pointer"
-                onClick={() => window.open(post.permalink, '_blank')}
+                className="bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:border-pink-500/50 transition-all duration-300 hover:scale-105 group cursor-pointer"
+                onClick={() => handlePostClick(post)}
               >
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img 
-                    src={post.media_url} 
-                    alt="Instagram post"
+                    src={post.url_imagem} 
+                    alt={post.titulo}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute top-3 right-3">
@@ -142,24 +112,25 @@ export const InstagramFeed = () => {
                     <div className="flex space-x-4 text-white">
                       <div className="flex items-center">
                         <Heart size={20} className="mr-1" />
-                        <span className="text-sm">142</span>
+                        <span className="text-sm">{post.curtidas || 0}</span>
                       </div>
                       <div className="flex items-center">
                         <MessageCircle size={20} className="mr-1" />
-                        <span className="text-sm">23</span>
+                        <span className="text-sm">{post.comentarios || 0}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 
                 <CardContent className="p-4">
+                  <h3 className="text-white font-medium mb-2">{post.titulo}</h3>
                   <p className="text-gray-300 text-sm mb-3 line-clamp-2">
-                    {post.caption}
+                    {post.descricao}
                   </p>
                   
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500 text-xs">
-                      {formatDate(post.timestamp)}
+                      {formatDate(post.created_at)}
                     </span>
                     <div className="flex items-center space-x-2">
                       <button className="text-gray-400 hover:text-pink-400 transition-colors">
@@ -173,6 +144,10 @@ export const InstagramFeed = () => {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-400">Nenhuma postagem encontrada</p>
           </div>
         )}
 

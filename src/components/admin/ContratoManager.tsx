@@ -1,9 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, Plus, Trash2 } from 'lucide-react';
+import { numberToWordsBrazilian } from '@/utils/supabaseStorage';
+import jsPDF from 'jspdf';
 
 interface Formulario {
   id: string;
@@ -19,6 +22,14 @@ interface Formulario {
   observacoes: string | null;
   status: string;
   created_at: string;
+  itens_adicionais?: ItemAdicional[];
+}
+
+interface ItemAdicional {
+  id?: string;
+  descricao: string;
+  valor: number;
+  quantidade: number;
 }
 
 interface Config {
@@ -32,6 +43,8 @@ export const ContratoManager = () => {
   const [contratoGerado, setContratoGerado] = useState<string>('');
   const [reciboGerado, setReciboGerado] = useState<string>('');
   const [configs, setConfigs] = useState<Record<string, string>>({});
+  const [itensAdicionais, setItensAdicionais] = useState<ItemAdicional[]>([]);
+  const [novoItem, setNovoItem] = useState<ItemAdicional>({ descricao: '', valor: 0, quantidade: 1 });
 
   useEffect(() => {
     fetchFormularios();
@@ -73,10 +86,12 @@ export const ContratoManager = () => {
     return timeStr.substring(0, 5);
   };
 
-  const calcularValorTotal = (adultos: number, criancas: number) => {
+  const calcularValorTotal = (adultos: number, criancas: number, itensAdicionais: ItemAdicional[] = []) => {
     const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
     const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
-    return (adultos * valorAdulto) + (criancas * valorCrianca);
+    const valorBase = (adultos * valorAdulto) + (criancas * valorCrianca);
+    const valorItens = itensAdicionais.reduce((acc, item) => acc + (item.valor * item.quantidade), 0);
+    return valorBase + valorItens;
   };
 
   const calcularEntrada = (valorTotal: number) => {
@@ -84,13 +99,32 @@ export const ContratoManager = () => {
     return valorTotal * percentualEntrada;
   };
 
+  const adicionarItem = () => {
+    if (novoItem.descricao && novoItem.valor > 0) {
+      setItensAdicionais([...itensAdicionais, { ...novoItem }]);
+      setNovoItem({ descricao: '', valor: 0, quantidade: 1 });
+    }
+  };
+
+  const removerItem = (index: number) => {
+    setItensAdicionais(itensAdicionais.filter((_, i) => i !== index));
+  };
+
   const gerarContrato = (formulario: Formulario) => {
-    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas);
+    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
     const entrada = calcularEntrada(valorTotal);
     const restante = valorTotal - entrada;
     const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
     const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
     const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+    
+    let itensTexto = '';
+    if (itensAdicionais.length > 0) {
+      itensTexto = '\n\nITENS ADICIONAIS:\n';
+      itensAdicionais.forEach(item => {
+        itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
+      });
+    }
     
     const contrato = `══════════════════════════════════════════════════════════
                      JULIO'S PIZZA HOUSE
@@ -126,7 +160,7 @@ DETALHES DO EVENTO
 Número de pessoas confirmadas:
 • Adultos: ${formulario.quantidade_adultos} pessoas
 • Crianças (5-9 anos): ${formulario.quantidade_criancas} pessoas
-• Total: ${formulario.quantidade_adultos + formulario.quantidade_criancas} pessoas
+• Total: ${formulario.quantidade_adultos + formulario.quantidade_criancas} pessoas${itensTexto}
 
 ──────────────────────────────────────────────────────────
 
@@ -192,7 +226,7 @@ _________________________________    _________________________________
   };
 
   const gerarRecibo = (formulario: Formulario) => {
-    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas);
+    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
     const entrada = calcularEntrada(valorTotal);
     const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
     
@@ -208,7 +242,7 @@ CPF: ${formulario.cpf}
 Endereço: ${formulario.endereco}
 
 A importância de: R$ ${entrada.toFixed(2).replace('.', ',')}
-(${numberToWords(entrada)} reais)
+(${numberToWordsBrazilian(entrada)})
 
 ──────────────────────────────────────────────────────────
 
@@ -243,45 +277,24 @@ Júlio's Pizza House
     setReciboGerado(recibo);
   };
 
-  const numberToWords = (num: number): string => {
-    const units = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
-    const teens = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
-    const tens = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
-    const hundreds = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  const downloadPDF = (content: string, filename: string) => {
+    const doc = new jsPDF();
+    const lines = content.split('\n');
     
-    const intPart = Math.floor(num);
+    doc.setFont('courier');
+    doc.setFontSize(10);
     
-    if (intPart === 0) return 'zero';
-    if (intPart === 100) return 'cem';
+    let y = 20;
+    lines.forEach(line => {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(line, 10, y);
+      y += 5;
+    });
     
-    let result = '';
-    
-    if (intPart >= 100) {
-      result += hundreds[Math.floor(intPart / 100)];
-      if (intPart % 100 !== 0) result += ' e ';
-    }
-    
-    const remainder = intPart % 100;
-    if (remainder >= 20) {
-      result += tens[Math.floor(remainder / 10)];
-      if (remainder % 10 !== 0) result += ' e ' + units[remainder % 10];
-    } else if (remainder >= 10) {
-      result += teens[remainder - 10];
-    } else if (remainder > 0) {
-      result += units[remainder];
-    }
-    
-    return result;
-  };
-
-  const downloadDocument = (content: string, filename: string) => {
-    const element = document.createElement('a');
-    const file = new Blob([content], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = filename;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    doc.save(filename);
   };
 
   return (
@@ -306,13 +319,79 @@ Júlio's Pizza House
                   </div>
                   <div className="text-right">
                     <p className="text-orange-400 font-bold">
-                      R$ {calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas).toFixed(2).replace('.', ',')}
+                      R$ {calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais).toFixed(2).replace('.', ',')}
                     </p>
                     <p className="text-gray-400 text-sm">Total</p>
                   </div>
                 </div>
                 
+                {/* Seção de itens adicionais */}
+                {selectedFormulario?.id === formulario.id && (
+                  <div className="mb-4 p-4 bg-gray-700/50 rounded-lg">
+                    <h5 className="text-white font-medium mb-3">Itens Adicionais</h5>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      <Input
+                        placeholder="Descrição"
+                        value={novoItem.descricao}
+                        onChange={(e) => setNovoItem({...novoItem, descricao: e.target.value})}
+                        className="bg-gray-600 border-gray-500 text-white text-sm"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Valor"
+                        value={novoItem.valor}
+                        onChange={(e) => setNovoItem({...novoItem, valor: parseFloat(e.target.value) || 0})}
+                        className="bg-gray-600 border-gray-500 text-white text-sm"
+                      />
+                      <div className="flex gap-1">
+                        <Input
+                          type="number"
+                          placeholder="Qtd"
+                          value={novoItem.quantidade}
+                          onChange={(e) => setNovoItem({...novoItem, quantidade: parseInt(e.target.value) || 1})}
+                          className="bg-gray-600 border-gray-500 text-white text-sm"
+                        />
+                        <Button 
+                          size="sm" 
+                          onClick={adicionarItem}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Plus size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {itensAdicionais.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center mb-2 p-2 bg-gray-600/50 rounded">
+                        <span className="text-white text-sm">
+                          {item.descricao} - {item.quantidade}x R$ {item.valor.toFixed(2).replace('.', ',')}
+                        </span>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => removerItem(index)}
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      setSelectedFormulario(formulario);
+                      if (selectedFormulario?.id !== formulario.id) {
+                        setItensAdicionais([]);
+                      }
+                    }}
+                    className="bg-gray-600 hover:bg-gray-700"
+                  >
+                    Selecionar
+                  </Button>
                   <Button 
                     size="sm" 
                     onClick={() => {
@@ -352,14 +431,14 @@ Júlio's Pizza House
                 </CardTitle>
                 <Button 
                   size="sm"
-                  onClick={() => downloadDocument(
+                  onClick={() => downloadPDF(
                     contratoGerado || reciboGerado,
-                    `${contratoGerado ? 'contrato' : 'recibo'}_${selectedFormulario?.nome_completo.replace(/\s+/g, '_')}.txt`
+                    `${contratoGerado ? 'contrato' : 'recibo'}_${selectedFormulario?.nome_completo.replace(/\s+/g, '_')}.pdf`
                   )}
                   className="bg-orange-600 hover:bg-orange-700"
                 >
                   <Download className="mr-1" size={14} />
-                  Download
+                  Download PDF
                 </Button>
               </div>
             </CardHeader>
