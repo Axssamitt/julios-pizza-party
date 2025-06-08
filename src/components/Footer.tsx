@@ -1,29 +1,77 @@
+
 import React, { useState, useEffect } from 'react';
-import { Facebook, Instagram, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
+import { Facebook, Instagram, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPhoneBrazil } from '@/utils/supabaseStorage';
+
+interface FooterConfig {
+  nome_empresa: string;
+  visivel_nome_empresa: boolean;
+  endereco: string;
+  visivel_endereco: boolean;
+  telefone: string;
+  visivel_telefone: boolean;
+  facebook_url: string;
+  visivel_facebook: boolean;
+  instagram_url: string;
+  visivel_instagram: boolean;
+}
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [whatsappNumero, setWhatsappNumero] = useState('(43) 99126-7766');
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>({
+    nome_empresa: 'Júlio\'s Pizza House',
+    visivel_nome_empresa: true,
+    endereco: 'Londrina - PR',
+    visivel_endereco: true,
+    telefone: '(43) 99126-7766',
+    visivel_telefone: true,
+    facebook_url: 'https://www.facebook.com/JuliosPIZZAHOUSE/',
+    visivel_facebook: true,
+    instagram_url: 'https://instagram.com/juliospizzahouse',
+    visivel_instagram: true
+  });
 
   useEffect(() => {
-    fetchWhatsappConfig();
+    fetchConfigurations();
   }, []);
 
-  const fetchWhatsappConfig = async () => {
+  const fetchConfigurations = async () => {
     try {
-      const { data, error } = await supabase
+      // Buscar configuração do WhatsApp
+      const { data: whatsappData, error: whatsappError } = await supabase
         .from('configuracoes')
         .select('valor')
         .eq('chave', 'whatsapp_numero')
         .single();
       
-      if (!error && data) {
-        setWhatsappNumero(formatPhoneBrazil(data.valor));
+      if (!whatsappError && whatsappData) {
+        setWhatsappNumero(formatPhoneBrazil(whatsappData.valor));
+      }
+
+      // Buscar configurações do footer
+      const { data: footerData, error: footerError } = await supabase
+        .from('home_config')
+        .select('nome_empresa, visivel_nome_empresa, endereco, visivel_endereco, telefone, visivel_telefone, facebook_url, visivel_facebook, instagram_url, visivel_instagram')
+        .single();
+      
+      if (!footerError && footerData) {
+        setFooterConfig(prev => ({
+          nome_empresa: footerData.nome_empresa || prev.nome_empresa,
+          visivel_nome_empresa: footerData.visivel_nome_empresa !== false,
+          endereco: footerData.endereco || prev.endereco,
+          visivel_endereco: footerData.visivel_endereco !== false,
+          telefone: footerData.telefone || prev.telefone,
+          visivel_telefone: footerData.visivel_telefone !== false,
+          facebook_url: footerData.facebook_url || prev.facebook_url,
+          visivel_facebook: footerData.visivel_facebook !== false,
+          instagram_url: footerData.instagram_url || prev.instagram_url,
+          visivel_instagram: footerData.visivel_instagram !== false
+        }));
       }
     } catch (error) {
-      console.error('Erro ao carregar número do WhatsApp:', error);
+      console.error('Erro ao carregar configurações:', error);
     }
   };
 
@@ -44,9 +92,11 @@ export const Footer = () => {
                   <span className="text-white font-bold text-xl">J</span>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-                    Júlio's Pizza House
-                  </h3>
+                  {footerConfig.visivel_nome_empresa && (
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                      {footerConfig.nome_empresa}
+                    </h3>
+                  )}
                   <p className="text-orange-400">O sabor vai até você</p>
                 </div>
               </div>
@@ -55,22 +105,26 @@ export const Footer = () => {
                 Ingredientes frescos, massa artesanal e muito amor em cada fatia.
               </p>
               <div className="flex space-x-4">
-                <a 
-                  href="https://www.facebook.com/JuliosPIZZAHOUSE/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
-                >
-                  <Facebook size={20} className="text-white" />
-                </a>
-                <a 
-                  href="https://instagram.com/juliospizzahouse" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
-                >
-                  <Instagram size={20} className="text-white" />
-                </a>
+                {footerConfig.visivel_facebook && (
+                  <a 
+                    href={footerConfig.facebook_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
+                  >
+                    <Facebook size={20} className="text-white" />
+                  </a>
+                )}
+                {footerConfig.visivel_instagram && (
+                  <a 
+                    href={footerConfig.instagram_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
+                  >
+                    <Instagram size={20} className="text-white" />
+                  </a>
+                )}
               </div>
             </div>
 
@@ -78,23 +132,23 @@ export const Footer = () => {
             <div>
               <h4 className="text-white font-semibold text-lg mb-6">Contato</h4>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Phone className="text-orange-400" size={18} />
-                  <button 
-                    onClick={handlePhoneClick}
-                    className="text-gray-400 hover:text-orange-400 transition-colors"
-                  >
-                    {whatsappNumero}
-                  </button>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="text-orange-400" size={18} />
-                  <span className="text-gray-400">Londrina - PR</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Clock className="text-orange-400" size={18} />
-                  <span className="text-gray-400">18:00 - 23:00</span>
-                </div>
+                {footerConfig.visivel_telefone && (
+                  <div className="flex items-center space-x-3">
+                    <Phone className="text-orange-400" size={18} />
+                    <button 
+                      onClick={handlePhoneClick}
+                      className="text-gray-400 hover:text-orange-400 transition-colors"
+                    >
+                      {footerConfig.telefone}
+                    </button>
+                  </div>
+                )}
+                {footerConfig.visivel_endereco && (
+                  <div className="flex items-center space-x-3">
+                    <MapPin className="text-orange-400" size={18} />
+                    <span className="text-gray-400">{footerConfig.endereco}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -104,6 +158,9 @@ export const Footer = () => {
               <div className="space-y-3">
                 <a href="#home" className="block text-gray-400 hover:text-orange-400 transition-colors">
                   Início
+                </a>
+                <a href="#about" className="block text-gray-400 hover:text-orange-400 transition-colors">
+                  Sobre Nós
                 </a>
                 <a href="#pizzas" className="block text-gray-400 hover:text-orange-400 transition-colors">
                   Nossas Pizzas
@@ -120,7 +177,7 @@ export const Footer = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center">
             <p className="text-gray-500">
-              © {currentYear} Júlio's Pizza House. Todos os direitos reservados. 
+              © {currentYear} {footerConfig.nome_empresa}. Todos os direitos reservados. 
               <span className="block mt-2">
                 Desenvolvido com ❤️ para os amantes de pizza em Londrina-PR
               </span>
