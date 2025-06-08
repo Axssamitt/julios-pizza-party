@@ -3,8 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, Edit, Trash2, Calendar, Clock, Users, Phone, MapPin } from 'lucide-react';
+import { Eye, Edit, Trash2, Calendar, Clock, Users, Phone, MapPin, Save, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Formulario {
   id: string;
@@ -25,6 +29,9 @@ interface Formulario {
 export const FormularioManager = () => {
   const [formularios, setFormularios] = useState<Formulario[]>([]);
   const [selectedFormulario, setSelectedFormulario] = useState<Formulario | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<Formulario>>({});
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchFormularios();
@@ -49,10 +56,50 @@ export const FormularioManager = () => {
 
     if (!error) {
       fetchFormularios();
+      toast({
+        title: "Sucesso",
+        description: "Status atualizado com sucesso!",
+      });
+    }
+  };
+
+  const handleEdit = (formulario: Formulario) => {
+    setEditingId(formulario.id);
+    setEditData(formulario);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId || !editData) return;
+
+    try {
+      const { error } = await supabase
+        .from('formularios_contato')
+        .update(editData)
+        .eq('id', editingId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Formulário atualizado com sucesso!",
+      });
+      
+      setEditingId(null);
+      setEditData({});
+      fetchFormularios();
+    } catch (error) {
+      console.error('Erro ao atualizar formulário:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o formulário.",
+        variant: "destructive",
+      });
     }
   };
 
   const deleteFormulario = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este formulário?')) return;
+
     const { error } = await supabase
       .from('formularios_contato')
       .delete()
@@ -61,6 +108,10 @@ export const FormularioManager = () => {
     if (!error) {
       fetchFormularios();
       setSelectedFormulario(null);
+      toast({
+        title: "Sucesso",
+        description: "Formulário excluído com sucesso!",
+      });
     }
   };
 
@@ -84,7 +135,7 @@ export const FormularioManager = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Formulários de Contato</h2>
+        <h2 className="text-2xl font-bold text-white">Formulários de Contato</h2>
         <div className="flex space-x-2">
           <Badge className="bg-yellow-600">Pendente: {formularios.filter(f => f.status === 'pendente').length}</Badge>
           <Badge className="bg-green-600">Confirmado: {formularios.filter(f => f.status === 'confirmado').length}</Badge>
@@ -95,85 +146,188 @@ export const FormularioManager = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           {formularios.map((formulario) => (
-            <Card key={formulario.id} className="bg-gray-800 border-gray-700 hover:border-orange-500/50 transition-colors">
+            <Card key={formulario.id} className="bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:border-orange-500/50 transition-colors">
               <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{formulario.nome_completo}</h3>
-                    <p className="text-gray-400 text-sm">CPF: {formulario.cpf}</p>
+                {editingId === formulario.id ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Input
+                        value={editData.nome_completo || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, nome_completo: e.target.value }))}
+                        placeholder="Nome completo"
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                      <Input
+                        value={editData.cpf || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, cpf: e.target.value }))}
+                        placeholder="CPF"
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                    </div>
+                    <Input
+                      value={editData.endereco || ''}
+                      onChange={(e) => setEditData(prev => ({ ...prev, endereco: e.target.value }))}
+                      placeholder="Endereço"
+                      className="bg-gray-700/50 border-gray-600 text-white"
+                    />
+                    <Input
+                      value={editData.endereco_evento || ''}
+                      onChange={(e) => setEditData(prev => ({ ...prev, endereco_evento: e.target.value }))}
+                      placeholder="Endereço do evento"
+                      className="bg-gray-700/50 border-gray-600 text-white"
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Input
+                        type="date"
+                        value={editData.data_evento || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, data_evento: e.target.value }))}
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                      <Input
+                        type="time"
+                        value={editData.horario || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, horario: e.target.value }))}
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                      <Input
+                        value={editData.telefone || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, telefone: e.target.value }))}
+                        placeholder="Telefone"
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Input
+                        type="number"
+                        value={editData.quantidade_adultos || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, quantidade_adultos: parseInt(e.target.value) }))}
+                        placeholder="Adultos"
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                      <Input
+                        type="number"
+                        value={editData.quantidade_criancas || ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, quantidade_criancas: parseInt(e.target.value) }))}
+                        placeholder="Crianças"
+                        className="bg-gray-700/50 border-gray-600 text-white"
+                      />
+                    </div>
+                    <Textarea
+                      value={editData.observacoes || ''}
+                      onChange={(e) => setEditData(prev => ({ ...prev, observacoes: e.target.value }))}
+                      placeholder="Observações"
+                      className="bg-gray-700/50 border-gray-600 text-white"
+                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={handleUpdate}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Save className="mr-1" size={14} />
+                        Salvar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingId(null)}
+                        className="border-gray-600"
+                      >
+                        <X className="mr-1" size={14} />
+                        Cancelar
+                      </Button>
+                    </div>
                   </div>
-                  <Badge className={getStatusColor(formulario.status)}>
-                    {formulario.status}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center text-gray-300">
-                    <Calendar className="mr-2" size={14} />
-                    {formatDate(formulario.data_evento)} às {formatTime(formulario.horario)}
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <Users className="mr-2" size={14} />
-                    {formulario.quantidade_adultos} adultos, {formulario.quantidade_criancas} crianças
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <Phone className="mr-2" size={14} />
-                    {formulario.telefone}
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <MapPin className="mr-2" size={14} />
-                    {formulario.endereco_evento}
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{formulario.nome_completo}</h3>
+                        <p className="text-gray-400 text-sm">CPF: {formulario.cpf}</p>
+                      </div>
+                      <Badge className={getStatusColor(formulario.status)}>
+                        {formulario.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-gray-300">
+                        <Calendar className="mr-2" size={14} />
+                        {formatDate(formulario.data_evento)} às {formatTime(formulario.horario)}
+                      </div>
+                      <div className="flex items-center text-gray-300">
+                        <Users className="mr-2" size={14} />
+                        {formulario.quantidade_adultos} adultos, {formulario.quantidade_criancas} crianças
+                      </div>
+                      <div className="flex items-center text-gray-300">
+                        <Phone className="mr-2" size={14} />
+                        {formulario.telefone}
+                      </div>
+                      <div className="flex items-center text-gray-300">
+                        <MapPin className="mr-2" size={14} />
+                        {formulario.endereco_evento}
+                      </div>
+                    </div>
 
-                <div className="flex justify-between mt-4">
-                  <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => updateStatus(formulario.id, 'confirmado')}
-                      className="border-green-600 text-green-400 hover:bg-green-600"
-                      disabled={formulario.status === 'confirmado'}
-                    >
-                      Confirmar
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => updateStatus(formulario.id, 'cancelado')}
-                      className="border-red-600 text-red-400 hover:bg-red-600"
-                      disabled={formulario.status === 'cancelado'}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setSelectedFormulario(formulario)}
-                      className="border-gray-600"
-                    >
-                      <Eye className="mr-1" size={14} />
-                      Ver
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      onClick={() => deleteFormulario(formulario.id)}
-                    >
-                      <Trash2 className="mr-1" size={14} />
-                      Excluir
-                    </Button>
-                  </div>
-                </div>
+                    <div className="flex justify-between mt-4">
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateStatus(formulario.id, 'confirmado')}
+                          className="border-green-600 text-green-400 hover:bg-green-600"
+                          disabled={formulario.status === 'confirmado'}
+                        >
+                          Confirmar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateStatus(formulario.id, 'cancelado')}
+                          className="border-red-600 text-red-400 hover:bg-red-600"
+                          disabled={formulario.status === 'cancelado'}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setSelectedFormulario(formulario)}
+                          className="border-gray-600"
+                        >
+                          <Eye className="mr-1" size={14} />
+                          Ver
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleEdit(formulario)}
+                          className="border-blue-600 text-blue-400 hover:bg-blue-600"
+                        >
+                          <Edit className="mr-1" size={14} />
+                          Editar
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => deleteFormulario(formulario.id)}
+                        >
+                          <Trash2 className="mr-1" size={14} />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
 
         {selectedFormulario && (
-          <Card className="bg-gray-800 border-gray-700 sticky top-4">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700 sticky top-4">
             <CardHeader>
               <CardTitle className="text-orange-400">Detalhes do Formulário</CardTitle>
             </CardHeader>

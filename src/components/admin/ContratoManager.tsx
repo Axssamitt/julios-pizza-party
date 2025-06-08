@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Download, Eye } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 
 interface Formulario {
   id: string;
@@ -21,14 +21,21 @@ interface Formulario {
   created_at: string;
 }
 
+interface Config {
+  chave: string;
+  valor: string;
+}
+
 export const ContratoManager = () => {
   const [formularios, setFormularios] = useState<Formulario[]>([]);
   const [selectedFormulario, setSelectedFormulario] = useState<Formulario | null>(null);
   const [contratoGerado, setContratoGerado] = useState<string>('');
   const [reciboGerado, setReciboGerado] = useState<string>('');
+  const [configs, setConfigs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchFormularios();
+    fetchConfigs();
   }, []);
 
   const fetchFormularios = async () => {
@@ -43,6 +50,21 @@ export const ContratoManager = () => {
     }
   };
 
+  const fetchConfigs = async () => {
+    const { data, error } = await supabase
+      .from('configuracoes')
+      .select('chave, valor')
+      .eq('ativo', true);
+
+    if (!error && data) {
+      const configMap = data.reduce((acc: Record<string, string>, config: Config) => {
+        acc[config.chave] = config.valor;
+        return acc;
+      }, {});
+      setConfigs(configMap);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
@@ -52,71 +74,119 @@ export const ContratoManager = () => {
   };
 
   const calcularValorTotal = (adultos: number, criancas: number) => {
-    const valorAdulto = 55.00;
-    const valorCrianca = 27.00;
+    const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
+    const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
     return (adultos * valorAdulto) + (criancas * valorCrianca);
   };
 
   const calcularEntrada = (valorTotal: number) => {
-    return valorTotal * 0.4; // 40% de entrada
+    const percentualEntrada = parseFloat(configs.percentual_entrada || '40') / 100;
+    return valorTotal * percentualEntrada;
   };
 
   const gerarContrato = (formulario: Formulario) => {
     const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas);
     const entrada = calcularEntrada(valorTotal);
     const restante = valorTotal - entrada;
+    const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
+    const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
+    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
     
-    const contrato = `JULIO'S PIZZA HOUSE
+    const contrato = `══════════════════════════════════════════════════════════
+                     JULIO'S PIZZA HOUSE
+                    CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+══════════════════════════════════════════════════════════
 
-CONTRATANTE: ${formulario.nome_completo.toUpperCase()}, CPF/CNPJ: n°${formulario.cpf}, residente em ${formulario.endereco.toUpperCase()}.
+CONTRATANTE: ${formulario.nome_completo.toUpperCase()}
+CPF: ${formulario.cpf}
+Endereço: ${formulario.endereco.toUpperCase()}
 
-CONTRATADA: JULIO'S PIZZA HOUSE, com sede em Londrina, na Rua Alzira Postali Gewrher, nº 119, bairro Jardim Catuai, Cep 86086-230, no Estado Paraná, inscrita no CPF sob o nº 034.988.389-03, neste ato representada pelo Responsável Sr. Júlio Cesar Fermino.
+CONTRATADA: JULIO'S PIZZA HOUSE
+Endereço: Rua Alzira Postali Gewrher, nº 119
+Bairro: Jardim Catuai, CEP: 86086-230
+Londrina - Paraná
+CPF: 034.988.389-03
+Responsável: Sr. Júlio Cesar Fermino
 
-As partes acima identificadas têm, entre si, justo e acertado o presente Contrato de Prestação de Serviços de Rodizio de pizza para festa, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente.
+──────────────────────────────────────────────────────────
 
-DO OBJETO DO CONTRATO
+OBJETO DO CONTRATO
 
-Cláusula 1ª. É objeto do presente contrato a prestação pela CONTRATADA à CONTRATANTE do serviço de rodizio de pizza, em evento que se realizará na data de ${formatDate(formulario.data_evento)}, no endereço / local: ${formulario.endereco_evento.toUpperCase()}.
+O presente contrato tem por objeto a prestação de serviços 
+de rodízio de pizza para evento que se realizará em:
 
-O EVENTO
+Data: ${formatDate(formulario.data_evento)}
+Horário: ${formatTime(formulario.horario)} às ${String(parseInt(formulario.horario.split(':')[0]) + 3).padStart(2, '0')}:${formulario.horario.split(':')[1]}
+Local: ${formulario.endereco_evento.toUpperCase()}
 
-Cláusula 2ª. O evento, para cuja realização são contratados os serviços de Rodizio de Pizza, é a festa de confraternização da CONTRATANTE, e contará com a presença de aproximadamente ${formulario.quantidade_adultos} adultos${formulario.quantidade_criancas > 0 ? ` e ${formulario.quantidade_criancas} crianças` : ''} a serem confirmada uma semana antes do evento.
+──────────────────────────────────────────────────────────
 
-Parágrafo único. O evento realizar-se-á no horário e local indicado no caput da cláusula 1ª, devendo o serviço de rodizio de pizza a ser prestado das ${formatTime(formulario.horario)} até às ${String(parseInt(formulario.horario.split(':')[0]) + 3).padStart(2, '0')}:${formulario.horario.split(':')[1]} horas.
+DETALHES DO EVENTO
+
+Número de pessoas confirmadas:
+• Adultos: ${formulario.quantidade_adultos} pessoas
+• Crianças (5-9 anos): ${formulario.quantidade_criancas} pessoas
+• Total: ${formulario.quantidade_adultos + formulario.quantidade_criancas} pessoas
+
+──────────────────────────────────────────────────────────
 
 OBRIGAÇÕES DA CONTRATANTE
 
-Cláusula 3ª. A CONTRATANTE deverá fornecer à CONTRATADA todas as informações necessárias à realização adequada do serviço de rodizio de pizza, devendo especificar os detalhes do evento, necessários ao perfeito fornecimento do serviço, e a forma como este deverá ser prestado.
+A CONTRATANTE deverá:
+• Fornecer todas as informações necessárias
+• Efetuar o pagamento conforme estabelecido
+• Disponibilizar local ventilado e tomada 220V
 
-Cláusula 4ª. A CONTRATANTE deverá efetuar o pagamento na forma e condições estabelecidas na cláusula 9ª.
+──────────────────────────────────────────────────────────
 
 OBRIGAÇÕES DA CONTRATADA
 
-Cláusula 5ª. É dever da CONTRATADA oferecer um serviço de rodizio pizza de acordo com as especificações da CONTRATANTE, devendo o serviço iniciar-se às ${formatTime(formulario.horario)} e terminar às ${String(parseInt(formulario.horario.split(':')[0]) + 3).padStart(2, '0')}:${formulario.horario.split(':')[1]} horas.
+A CONTRATADA se compromete a:
+• Fornecer rodízio de pizza de alta qualidade
+• Disponibilizar pelo menos 1 pizzaiolo e 1 garçom
+• Manter funcionários uniformizados
+• Preparar quantidade suficiente para até 10% a mais
 
-Parágrafo único. A CONTRATADA está obrigada a fornecer aos convidados do CONTRATANTE produtos de alta qualidade, que deverão ser preparados e servidos dentro de rigorosas normas de higiene e limpeza.
+OBSERVAÇÃO: Excedente de horário será cobrado 
+R$ 300,00 a cada meia hora ultrapassada.
 
-Obs: O excedente de horário será cobrado 300,00 (trezentos reais) a cada meia hora do horário ultrapassado.
+──────────────────────────────────────────────────────────
 
-Cláusula 6ª. A CONTRATADA se compromete a fornecer o cardápio escolhido pela CONTRATANTE, cujas especificações, inclusive de quantidade a ser servida, encontram-se em documento anexo ao presente contrato.
+VALORES E FORMA DE PAGAMENTO
 
-Cláusula 7ª. A CONTRATADA fornecerá pelo menos 1 pizzaiolo e 1 garçom para servir os convidados nas mesas.
+Valor por pessoa:
+• Adultos: R$ ${valorAdulto.toFixed(2).replace('.', ',')} cada
+• Crianças: R$ ${valorCrianca.toFixed(2).replace('.', ',')} cada
 
-Cláusula 8ª. A CONTRATADA obriga-se a manter todos os seus empregados devidamente uniformizados durante a prestação dos serviços ora contratados, garantindo que todos eles possuem os requisitos de urbanidade, moralidade e educação.
+VALOR TOTAL DO SERVIÇO: R$ ${valorTotal.toFixed(2).replace('.', ',')}
 
-DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO
+Forma de pagamento:
+• Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
+  (Depositar na Caixa Econômica - Ag: 1479 - Conta: 00028090-5)
+• Restante: R$ ${restante.toFixed(2).replace('.', ',')}
+  (A ser pago no dia do evento em dinheiro)
 
-Cláusula 9. O serviço contratado no presente instrumento será remunerado dependendo do numero de pessoas confirmadas uma semana antes do evento. A contratada garante que a quantidade de comida seja suficiente para atender o num de pessoas presentes, estando preparada para atender até 10% a mais do numero de pessoas confirmadas, cobrando o valor de R$ 55,00 por adulto e R$ 27,00 por crianças no total de R$ ${valorTotal.toFixed(2).replace('.', ',')}. O serviço deve ser pago em dinheiro, com uma entrada de R$ ${entrada.toFixed(2).replace('.', ',')} (depositados em conta, caixa econômica Ag: 1479 conta: 00028090-5 conta corrente) ANTECIPADO, a diferença no ato da festa no valor de R$ ${restante.toFixed(2).replace('.', ',')}.
+──────────────────────────────────────────────────────────
 
-Cláusula 10. O presente contrato poderá ser rescindido unilateralmente por qualquer uma das partes, desde que haja comunicação formal por escrito justificando o motivo. Deverá acontecer, além disso, até 10 dias corridos, antes da data prevista para o evento, com devolução da entrada. Caso o cliente queira ou precise cancelar ou mudar a data da reserva, após ter pago a entrada, a contratada descontará o valor pago na futura contratação do serviço se acontecer nos primeiros 30 dias corridos após o dia antecipadamente reservado.
+CANCELAMENTO
 
-LONDRINA, ${new Date().toLocaleDateString('pt-BR')}.
+O contrato pode ser rescindido por qualquer parte com 
+comunicação formal até 10 dias antes do evento, com 
+devolução da entrada. Cancelamento após pagamento da 
+entrada: valor será creditado para futura contratação 
+em até 30 dias.
+
+──────────────────────────────────────────────────────────
+
+LONDRINA, ${new Date().toLocaleDateString('pt-BR')}
 
 
-_________________________________                    _________________________________
-        CONTRATANTE                                      CONTRATADA
-    ${formulario.nome_completo}                        Júlio Cesar Fermino
-      CPF: ${formulario.cpf}                            CPF: 034.988.389-03`;
+_________________________________    _________________________________
+        CONTRATANTE                           CONTRATADA
+    ${formulario.nome_completo}              Júlio Cesar Fermino
+      CPF: ${formulario.cpf}                 CPF: 034.988.389-03
+
+══════════════════════════════════════════════════════════`;
 
     setContratoGerado(contrato);
   };
@@ -124,43 +194,62 @@ _________________________________                    ___________________________
   const gerarRecibo = (formulario: Formulario) => {
     const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas);
     const entrada = calcularEntrada(valorTotal);
+    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
     
-    const recibo = `RECIBO DE ENTRADA - JULIO'S PIZZA HOUSE
+    const recibo = `══════════════════════════════════════════════════════════
+                     JULIO'S PIZZA HOUSE
+                        RECIBO DE ENTRADA
+══════════════════════════════════════════════════════════
+
+RECIBO Nº: ${formulario.id.substring(0, 8).toUpperCase()}
 
 Recebemos de: ${formulario.nome_completo}
 CPF: ${formulario.cpf}
 Endereço: ${formulario.endereco}
 
-A importância de R$ ${entrada.toFixed(2).replace('.', ',')} (${numberToWords(entrada)} reais)
+A importância de: R$ ${entrada.toFixed(2).replace('.', ',')}
+(${numberToWords(entrada)} reais)
 
-Referente a: Entrada para contratação de serviço de rodízio de pizza para evento em ${formatDate(formulario.data_evento)} às ${formatTime(formulario.horario)}
+──────────────────────────────────────────────────────────
 
-Local do evento: ${formulario.endereco_evento}
-Quantidade de pessoas: ${formulario.quantidade_adultos} adultos${formulario.quantidade_criancas > 0 ? ` e ${formulario.quantidade_criancas} crianças` : ''}
+REFERENTE A:
+Entrada para contratação de serviço de rodízio de pizza
 
-Valor total do serviço: R$ ${valorTotal.toFixed(2).replace('.', ',')}
-Valor da entrada (40%): R$ ${entrada.toFixed(2).replace('.', ',')}
-Valor restante: R$ ${(valorTotal - entrada).toFixed(2).replace('.', ',')} (a ser pago no dia do evento)
+DETALHES DO EVENTO:
+• Data: ${formatDate(formulario.data_evento)}
+• Horário: ${formatTime(formulario.horario)}
+• Local: ${formulario.endereco_evento}
+• Pessoas: ${formulario.quantidade_adultos} adultos${formulario.quantidade_criancas > 0 ? ` e ${formulario.quantidade_criancas} crianças` : ''}
 
-Data: ${new Date().toLocaleDateString('pt-BR')}
+──────────────────────────────────────────────────────────
+
+RESUMO FINANCEIRO:
+• Valor total do serviço: R$ ${valorTotal.toFixed(2).replace('.', ',')}
+• Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
+• Saldo restante: R$ ${(valorTotal - entrada).toFixed(2).replace('.', ',')}
+  (a ser pago no dia do evento)
+
+──────────────────────────────────────────────────────────
+
+Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
 
 _________________________________
 Júlio Cesar Fermino
 CPF: 034.988.389-03
-Júlio's Pizza House`;
+Júlio's Pizza House
+
+══════════════════════════════════════════════════════════`;
 
     setReciboGerado(recibo);
   };
 
   const numberToWords = (num: number): string => {
-    // Função simplificada para converter número em palavras
     const units = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
     const teens = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
     const tens = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
     const hundreds = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
     
     const intPart = Math.floor(num);
-    const decPart = Math.round((num - intPart) * 100);
     
     if (intPart === 0) return 'zero';
     if (intPart === 100) return 'cem';
@@ -182,10 +271,6 @@ Júlio's Pizza House`;
       result += units[remainder];
     }
     
-    if (decPart > 0) {
-      result += ` e ${decPart}/100`;
-    }
-    
     return result;
   };
 
@@ -202,14 +287,14 @@ Júlio's Pizza House`;
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Geração de Contratos e Recibos</h2>
+        <h2 className="text-2xl font-bold text-white">Geração de Contratos e Recibos</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-orange-400">Eventos Confirmados</h3>
           {formularios.map((formulario) => (
-            <Card key={formulario.id} className="bg-gray-800 border-gray-700 hover:border-orange-500/50 transition-colors">
+            <Card key={formulario.id} className="bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:border-orange-500/50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -259,7 +344,7 @@ Júlio's Pizza House`;
         </div>
 
         {(contratoGerado || reciboGerado) && (
-          <Card className="bg-gray-800 border-gray-700 sticky top-4">
+          <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700 sticky top-4">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-orange-400">
@@ -279,7 +364,7 @@ Júlio's Pizza House`;
               </div>
             </CardHeader>
             <CardContent>
-              <div className="bg-white text-black p-4 rounded text-sm whitespace-pre-wrap font-mono max-h-96 overflow-y-auto">
+              <div className="bg-white text-black p-4 rounded text-xs whitespace-pre-wrap font-mono max-h-96 overflow-y-auto">
                 {contratoGerado || reciboGerado}
               </div>
             </CardContent>
