@@ -1,109 +1,99 @@
 
 import React from 'react';
+import { Facebook, Instagram, Phone, MapPin, Clock } from 'lucide-react';
 
-const Footer = () => {
+export const Footer = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-pizza-dark text-white py-12">
+    <footer className="bg-gray-900 border-t border-gray-800 py-16">
       <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            {/* Company Info */}
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <span className="text-2xl">🍕</span>
-                <span className="font-bold text-xl text-pizza-golden">Júlio's Pizza House</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Logo and Description */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-xl">J</span>
               </div>
-              <p className="text-gray-300 mb-4 leading-relaxed">
-                Há mais de 15 anos levando o autêntico sabor da pizza artesanal 
-                italiana para seus eventos especiais. Forno a lenha móvel e 
-                ingredientes premium em qualquer lugar.
-              </p>
-              <div className="flex space-x-4">
-                <a 
-                  href="https://instagram.com/juliospizzahouse" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-pizza-golden transition-colors"
-                >
-                  <span className="text-2xl">📷</span>
-                </a>
-                <a 
-                  href="https://facebook.com/juliospizzahouse" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-pizza-golden transition-colors"
-                >
-                  <span className="text-2xl">📘</span>
-                </a>
-                <a 
-                  href="https://wa.me/5511999999999" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-pizza-golden transition-colors"
-                >
-                  <span className="text-2xl">📱</span>
-                </a>
+              <div>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                  Júlio's Pizza House
+                </h3>
+                <p className="text-orange-400">O sabor vai até você</p>
               </div>
             </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="font-bold text-pizza-golden mb-4">Links Rápidos</h4>
-              <ul className="space-y-2">
-                <li><a href="#home" className="text-gray-300 hover:text-pizza-golden transition-colors">Início</a></li>
-                <li><a href="#about" className="text-gray-300 hover:text-pizza-golden transition-colors">Sobre Nós</a></li>
-                <li><a href="#menu" className="text-gray-300 hover:text-pizza-golden transition-colors">Cardápio</a></li>
-                <li><a href="#gallery" className="text-gray-300 hover:text-pizza-golden transition-colors">Galeria</a></li>
-                <li><a href="#testimonials" className="text-gray-300 hover:text-pizza-golden transition-colors">Depoimentos</a></li>
-                <li><a href="#contact" className="text-gray-300 hover:text-pizza-golden transition-colors">Contato</a></li>
-              </ul>
-            </div>
-
-            {/* Contact Info */}
-            <div>
-              <h4 className="font-bold text-pizza-golden mb-4">Contato</h4>
-              <div className="space-y-3 text-gray-300">
-                <div className="flex items-center space-x-2">
-                  <span>📱</span>
-                  <span>(11) 99999-9999</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span>📞</span>
-                  <span>(11) 3333-4444</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span>✉️</span>
-                  <span>contato@juliospizzahouse.com.br</span>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <span>⏰</span>
-                  <div>
-                    <div>Seg-Sex: 9h às 18h</div>
-                    <div>Sáb: 9h às 14h</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
-              © 2024 Júlio's Pizza House. Todos os direitos reservados.
+            <p className="text-gray-400 max-w-md mb-6">
+              Há anos levando o melhor sabor da pizza artesanal para Londrina e região. 
+              Ingredientes frescos, massa artesanal e muito amor em cada fatia.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-pizza-golden text-sm transition-colors">
-                Política de Privacidade
+            <div className="flex space-x-4">
+              <a 
+                href="https://www.facebook.com/JuliosPIZZAHOUSE/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
+              >
+                <Facebook size={20} className="text-white" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-pizza-golden text-sm transition-colors">
-                Termos de Uso
+              <a 
+                href="https://instagram.com/juliospizzahouse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors"
+              >
+                <Instagram size={20} className="text-white" />
               </a>
             </div>
           </div>
+
+          {/* Contact Info */}
+          <div>
+            <h4 className="text-white font-semibold text-lg mb-6">Contato</h4>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Phone className="text-orange-400" size={18} />
+                <span className="text-gray-400">(43) 99999-9999</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <MapPin className="text-orange-400" size={18} />
+                <span className="text-gray-400">Londrina - PR</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Clock className="text-orange-400" size={18} />
+                <span className="text-gray-400">18:00 - 23:00</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Links */}
+          <div>
+            <h4 className="text-white font-semibold text-lg mb-6">Links Rápidos</h4>
+            <div className="space-y-3">
+              <a href="#home" className="block text-gray-400 hover:text-orange-400 transition-colors">
+                Início
+              </a>
+              <a href="#pizzas" className="block text-gray-400 hover:text-orange-400 transition-colors">
+                Nossas Pizzas
+              </a>
+              <a href="#instagram" className="block text-gray-400 hover:text-orange-400 transition-colors">
+                Instagram
+              </a>
+              <a href="#contact" className="block text-gray-400 hover:text-orange-400 transition-colors">
+                Contato
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 mt-12 pt-8 text-center">
+          <p className="text-gray-500">
+            © {currentYear} Júlio's Pizza House. Todos os direitos reservados. 
+            <span className="block mt-2">
+              Desenvolvido com ❤️ para os amantes de pizza em Londrina-PR
+            </span>
+          </p>
         </div>
       </div>
     </footer>
   );
 };
-
-export default Footer;

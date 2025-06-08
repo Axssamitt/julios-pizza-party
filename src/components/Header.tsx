@@ -1,91 +1,125 @@
 
-import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import React, { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
-const Header = () => {
+export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const menuItems = [
-    { href: '#home', label: 'Início' },
-    { href: '#about', label: 'Sobre' },
-    { href: '#menu', label: 'Cardápio' },
-    { href: '#gallery', label: 'Galeria' },
-    { href: '#testimonials', label: 'Depoimentos' },
-    { href: '#contact', label: 'Contato' }
+    { label: 'INÍCIO', href: '#home' },
+    { label: 'SOBRE NÓS', href: '#about' },
+    { label: 'CARDÁPIO', href: '/cardapio' },
+    { label: 'INSTAGRAM', href: '#instagram' },
+    { label: 'CONTATO', href: '#contact' },
+    { label: 'ADMIN', href: '/auth' }
   ];
 
+  const handleMenuClick = (href: string) => {
+    setIsMenuOpen(false);
+    if (href.startsWith('#')) {
+      // Para âncoras, use navegação suave
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
-    <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-sm shadow-lg' : 'bg-transparent'
-    }`}>
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">🍕</span>
-            <span className="font-bold text-xl text-pizza-red">Júlio's Pizza House</span>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-orange-500/20">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-orange-500">
+              <img 
+                src="https://storage.googleapis.com/wzukusers/user-34847409/images/5cf9a50e698b6eDiLZd7/logoo_d200.png" 
+                alt="Júlio's Pizza House Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                Júlio's Pizza House
+              </h1>
+              <p className="text-orange-400 text-sm">O sabor vai até você</p>
+            </div>
           </div>
 
-          {/* Desktop Menu */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {menuItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-foreground hover:text-pizza-red transition-colors duration-200 relative group"
-              >
-                {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-pizza-red transition-all duration-300 group-hover:w-full"></span>
-              </a>
-            ))}
-            <Button className="bg-pizza-red hover:bg-pizza-red/90 text-white">
-              Solicitar Orçamento
-            </Button>
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex space-x-8">
+            {menuItems.map((item) => {
+              if (item.href.startsWith('/')) {
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
+                      item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-1 rounded-md border border-orange-500/50' : ''
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => handleMenuClick(item.href)}
+                  className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium"
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden text-white hover:text-orange-400"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <Menu className="h-6 w-6" />
-          </button>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </Button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-200">
-            <nav className="py-4 space-y-2">
-              {menuItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="block px-4 py-2 text-foreground hover:text-pizza-red hover:bg-gray-50 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div className="px-4 pt-2">
-                <Button className="w-full bg-pizza-red hover:bg-pizza-red/90 text-white">
-                  Solicitar Orçamento
-                </Button>
-              </div>
-            </nav>
-          </div>
+          <nav className="lg:hidden mt-4 pb-4 border-t border-gray-700 pt-4">
+            <div className="flex flex-col space-y-3">
+              {menuItems.map((item) => {
+                if (item.href.startsWith('/')) {
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.href}
+                      className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
+                        item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50 text-center' : ''
+                      }`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => handleMenuClick(item.href)}
+                    className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-left"
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
         )}
       </div>
     </header>
   );
 };
-
-export default Header;
