@@ -1,9 +1,36 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Facebook, Instagram, Phone, MapPin, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [whatsappNumero, setWhatsappNumero] = useState('(43) 99999-9999');
+
+  useEffect(() => {
+    fetchWhatsappConfig();
+  }, []);
+
+  const fetchWhatsappConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('configuracoes')
+        .select('valor')
+        .eq('chave', 'whatsapp_numero')
+        .single();
+      
+      if (!error && data) {
+        setWhatsappNumero(data.valor);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar número do WhatsApp:', error);
+    }
+  };
+
+  const handlePhoneClick = () => {
+    const numeroLimpo = whatsappNumero.replace(/\D/g, '');
+    window.open(`https://wa.me/${numeroLimpo}`, '_blank');
+  };
 
   return (
     <footer className="bg-gray-900 border-t border-gray-800 py-16">
@@ -52,7 +79,12 @@ export const Footer = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <Phone className="text-orange-400" size={18} />
-                <span className="text-gray-400">(43) 99999-9999</span>
+                <button 
+                  onClick={handlePhoneClick}
+                  className="text-gray-400 hover:text-orange-400 transition-colors"
+                >
+                  {whatsappNumero}
+                </button>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="text-orange-400" size={18} />

@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Pizza {
   id: string;
@@ -25,6 +26,8 @@ export const PizzaManager = () => {
     imagem_url: ''
   });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchPizzas();
@@ -38,6 +41,52 @@ export const PizzaManager = () => {
 
     if (!error && data) {
       setPizzas(data);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `pizzas/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from('images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isNewPizza: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const imageUrl = await uploadImage(file);
+      if (isNewPizza) {
+        setNewPizza(prev => ({ ...prev, imagem_url: imageUrl }));
+      }
+      toast({
+        title: "Sucesso",
+        description: "Imagem enviada com sucesso!",
+      });
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível fazer upload da imagem.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -113,12 +162,38 @@ export const PizzaManager = () => {
               onChange={(e) => setNewPizza({ ...newPizza, ingredientes: e.target.value })}
               className="bg-gray-700 border-gray-600 text-white"
             />
-            <Input
-              placeholder="URL da imagem"
-              value={newPizza.imagem_url}
-              onChange={(e) => setNewPizza({ ...newPizza, imagem_url: e.target.value })}
-              className="bg-gray-700 border-gray-600 text-white"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, true)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                  disabled={uploading}
+                />
+                <Button
+                  type="button"
+                  disabled={uploading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Upload className="mr-2" size={16} />
+                  {uploading ? 'Enviando...' : 'Upload'}
+                </Button>
+              </div>
+              <Input
+                placeholder="Ou cole a URL da imagem"
+                value={newPizza.imagem_url}
+                onChange={(e) => setNewPizza({ ...newPizza, imagem_url: e.target.value })}
+                className="bg-gray-700 border-gray-600 text-white"
+              />
+            </div>
+            {newPizza.imagem_url && (
+              <img 
+                src={newPizza.imagem_url} 
+                alt="Preview"
+                className="w-32 h-32 object-cover rounded"
+              />
+            )}
             <div className="flex space-x-2">
               <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
                 <Save className="mr-2" size={16} />
@@ -158,6 +233,8 @@ export const PizzaManager = () => {
                   pizza={pizza} 
                   onSave={(updates) => handleUpdate(pizza.id, updates)}
                   onCancel={() => setEditingId(null)}
+                  onImageUpload={handleFileUpload}
+                  uploading={uploading}
                 />
               ) : (
                 <div>
@@ -195,11 +272,15 @@ export const PizzaManager = () => {
 const EditPizzaForm = ({ 
   pizza, 
   onSave, 
-  onCancel 
+  onCancel,
+  onImageUpload,
+  uploading
 }: { 
   pizza: Pizza; 
   onSave: (updates: Partial<Pizza>) => void; 
-  onCancel: () => void; 
+  onCancel: () => void;
+  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  uploading: boolean;
 }) => {
   const [formData, setFormData] = useState({
     nome: pizza.nome,
@@ -221,12 +302,32 @@ const EditPizzaForm = ({
         className="bg-gray-700 border-gray-600 text-white text-sm"
         rows={3}
       />
-      <Input
-        value={formData.imagem_url}
-        onChange={(e) => setFormData({ ...formData, imagem_url: e.target.value })}
-        className="bg-gray-700 border-gray-600 text-white text-sm"
-        placeholder="URL da imagem"
-      />
+      <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={onImageUpload}
+            className="bg-gray-700 border-gray-600 text-white text-sm"
+            disabled={uploading}
+          />
+          <Button
+            type="button"
+            disabled={uploading}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Upload className="mr-1" size={12} />
+            {uploading ? 'Enviando...' : 'Upload'}
+          </Button>
+        </div>
+        <Input
+          value={formData.imagem_url}
+          onChange={(e) => setFormData({ ...formData, imagem_url: e.target.value })}
+          className="bg-gray-700 border-gray-600 text-white text-sm"
+          placeholder="URL da imagem"
+        />
+      </div>
       <div className="flex items-center space-x-2">
         <input
           type="checkbox"
