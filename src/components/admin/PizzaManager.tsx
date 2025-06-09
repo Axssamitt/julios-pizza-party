@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadImage } from '@/utils/supabaseStorage';
 
 interface Pizza {
   id: string;
@@ -15,6 +17,7 @@ interface Pizza {
   imagem_url: string | null;
   ativo: boolean;
   ordem: number;
+  tipo: string;
 }
 
 export const PizzaManager = () => {
@@ -23,7 +26,8 @@ export const PizzaManager = () => {
   const [newPizza, setNewPizza] = useState({
     nome: '',
     ingredientes: '',
-    imagem_url: ''
+    imagem_url: '',
+    tipo: 'salgada'
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -44,33 +48,13 @@ export const PizzaManager = () => {
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `pizzas/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage
-      .from('images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isNewPizza: boolean = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const imageUrl = await uploadImage(file);
+      const imageUrl = await uploadImage(file, 'pizzas');
       if (isNewPizza) {
         setNewPizza(prev => ({ ...prev, imagem_url: imageUrl }));
       }
@@ -102,9 +86,13 @@ export const PizzaManager = () => {
       }]);
 
     if (!error) {
-      setNewPizza({ nome: '', ingredientes: '', imagem_url: '' });
+      setNewPizza({ nome: '', ingredientes: '', imagem_url: '', tipo: 'salgada' });
       setShowAddForm(false);
       fetchPizzas();
+      toast({
+        title: "Sucesso",
+        description: "Pizza adicionada com sucesso!",
+      });
     }
   };
 
@@ -117,10 +105,16 @@ export const PizzaManager = () => {
     if (!error) {
       setEditingId(null);
       fetchPizzas();
+      toast({
+        title: "Sucesso",
+        description: "Pizza atualizada com sucesso!",
+      });
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta pizza?')) return;
+
     const { error } = await supabase
       .from('pizzas')
       .delete()
@@ -128,6 +122,10 @@ export const PizzaManager = () => {
 
     if (!error) {
       fetchPizzas();
+      toast({
+        title: "Sucesso",
+        description: "Pizza removida com sucesso!",
+      });
     }
   };
 
@@ -162,6 +160,15 @@ export const PizzaManager = () => {
               onChange={(e) => setNewPizza({ ...newPizza, ingredientes: e.target.value })}
               className="bg-gray-700 border-gray-600 text-white"
             />
+            <Select value={newPizza.tipo} onValueChange={(value) => setNewPizza({ ...newPizza, tipo: value })}>
+              <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="salgada">Salgada</SelectItem>
+                <SelectItem value="doce">Doce</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Input
@@ -226,6 +233,9 @@ export const PizzaManager = () => {
                   <span className="text-white font-bold">INATIVO</span>
                 </div>
               )}
+              <div className="absolute top-2 right-2 bg-orange-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                {pizza.tipo === 'doce' ? 'Doce' : 'Salgada'}
+              </div>
             </div>
             <CardContent className="p-4">
               {editingId === pizza.id ? (
@@ -286,7 +296,8 @@ const EditPizzaForm = ({
     nome: pizza.nome,
     ingredientes: pizza.ingredientes,
     imagem_url: pizza.imagem_url || '',
-    ativo: pizza.ativo
+    ativo: pizza.ativo,
+    tipo: pizza.tipo || 'salgada'
   });
 
   return (
@@ -302,6 +313,15 @@ const EditPizzaForm = ({
         className="bg-gray-700 border-gray-600 text-white text-sm"
         rows={3}
       />
+      <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
+        <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="salgada">Salgada</SelectItem>
+          <SelectItem value="doce">Doce</SelectItem>
+        </SelectContent>
+      </Select>
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Input

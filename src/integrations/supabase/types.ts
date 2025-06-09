@@ -129,24 +129,60 @@ export type Database = {
       home_config: {
         Row: {
           atualizado_por: string | null
+          endereco: string | null
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
+          nome_empresa: string | null
           subtitulo_hero: string
+          telefone: string | null
+          texto_sobre: string | null
           titulo_hero: string
           updated_at: string
+          visivel_endereco: boolean | null
+          visivel_facebook: boolean | null
+          visivel_instagram: boolean | null
+          visivel_nome_empresa: boolean | null
+          visivel_sobre: boolean | null
+          visivel_telefone: boolean | null
         }
         Insert: {
           atualizado_por?: string | null
+          endereco?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
+          nome_empresa?: string | null
           subtitulo_hero?: string
+          telefone?: string | null
+          texto_sobre?: string | null
           titulo_hero?: string
           updated_at?: string
+          visivel_endereco?: boolean | null
+          visivel_facebook?: boolean | null
+          visivel_instagram?: boolean | null
+          visivel_nome_empresa?: boolean | null
+          visivel_sobre?: boolean | null
+          visivel_telefone?: boolean | null
         }
         Update: {
           atualizado_por?: string | null
+          endereco?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
+          nome_empresa?: string | null
           subtitulo_hero?: string
+          telefone?: string | null
+          texto_sobre?: string | null
           titulo_hero?: string
           updated_at?: string
+          visivel_endereco?: boolean | null
+          visivel_facebook?: boolean | null
+          visivel_instagram?: boolean | null
+          visivel_nome_empresa?: boolean | null
+          visivel_sobre?: boolean | null
+          visivel_telefone?: boolean | null
         }
         Relationships: [
           {
@@ -161,7 +197,10 @@ export type Database = {
       instagram_posts: {
         Row: {
           ativo: boolean | null
+          comentarios: number | null
           created_at: string
+          curtidas: number | null
+          descricao: string | null
           id: string
           ordem: number | null
           titulo: string
@@ -171,7 +210,10 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean | null
+          comentarios?: number | null
           created_at?: string
+          curtidas?: number | null
+          descricao?: string | null
           id?: string
           ordem?: number | null
           titulo: string
@@ -181,7 +223,10 @@ export type Database = {
         }
         Update: {
           ativo?: boolean | null
+          comentarios?: number | null
           created_at?: string
+          curtidas?: number | null
+          descricao?: string | null
           id?: string
           ordem?: number | null
           titulo?: string
@@ -230,6 +275,7 @@ export type Database = {
           ingredientes: string
           nome: string
           ordem: number | null
+          tipo: string | null
           updated_at: string
         }
         Insert: {
@@ -240,6 +286,7 @@ export type Database = {
           ingredientes: string
           nome: string
           ordem?: number | null
+          tipo?: string | null
           updated_at?: string
         }
         Update: {
@@ -250,6 +297,7 @@ export type Database = {
           ingredientes?: string
           nome?: string
           ordem?: number | null
+          tipo?: string | null
           updated_at?: string
         }
         Relationships: []

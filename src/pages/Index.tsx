@@ -18,10 +18,10 @@ const Index = () => {
       <Header />
       <main>
         <Hero />
-        <AboutUs />
         <PizzaGallery />
         <InstagramFeed />
         <ContactForm />
+        <AboutUs />
       </main>
       <Footer />
     </div>
