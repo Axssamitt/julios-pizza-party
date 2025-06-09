@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, Image, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadImage } from '@/utils/supabaseStorage';
 
 interface CarouselImage {
   id: string;
@@ -57,38 +58,26 @@ export const CarouselManager = () => {
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `carousel/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data } = supabase.storage
-      .from('images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const imageUrl = await uploadImage(file);
-      setFormData(prev => ({ ...prev, url_imagem: imageUrl }));
-      toast({
-        title: "Sucesso",
-        description: "Imagem enviada com sucesso!",
-      });
+      const imageUrl = await uploadImage(file, 'carousel');
+      if (imageUrl) {
+        setFormData(prev => ({ ...prev, url_imagem: imageUrl }));
+        toast({
+          title: "Sucesso",
+          description: "Imagem enviada com sucesso!",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível fazer upload da imagem. URL da imagem não retornada.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
       toast({

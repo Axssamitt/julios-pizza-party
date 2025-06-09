@@ -48,20 +48,29 @@ export const PizzaManager = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isNewPizza: boolean = false) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (file: File, setImageUrlCallback?: (url: string) => void) => {
     if (!file) return;
 
     setUploading(true);
     try {
       const imageUrl = await uploadImage(file, 'pizzas');
-      if (isNewPizza) {
-        setNewPizza(prev => ({ ...prev, imagem_url: imageUrl }));
+      if (imageUrl) {
+        if (setImageUrlCallback) {
+          setImageUrlCallback(imageUrl);
+        } else {
+          setNewPizza(prev => ({ ...prev, imagem_url: imageUrl }));
+        }
+        toast({
+          title: "Sucesso",
+          description: "Imagem enviada com sucesso!",
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter a URL da imagem após o upload.",
+          variant: "destructive",
+        });
       }
-      toast({
-        title: "Sucesso",
-        description: "Imagem enviada com sucesso!",
-      });
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
       toast({
@@ -174,7 +183,10 @@ export const PizzaManager = () => {
                 <Input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleFileUpload(e, true)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file);
+                  }}
                   className="bg-gray-700 border-gray-600 text-white"
                   disabled={uploading}
                 />
@@ -243,7 +255,7 @@ export const PizzaManager = () => {
                   pizza={pizza} 
                   onSave={(updates) => handleUpdate(pizza.id, updates)}
                   onCancel={() => setEditingId(null)}
-                  onImageUpload={handleFileUpload}
+                  uploadHandler={handleFileUpload}
                   uploading={uploading}
                 />
               ) : (
@@ -280,18 +292,19 @@ export const PizzaManager = () => {
 };
 
 const EditPizzaForm = ({ 
-  pizza, 
-  onSave, 
+  pizza,
+  onSave,
   onCancel,
-  onImageUpload,
+  uploadHandler,
   uploading
-}: { 
-  pizza: Pizza; 
-  onSave: (updates: Partial<Pizza>) => void; 
+}: {
+  pizza: Pizza;
+  onSave: (updates: Partial<Pizza>) => void;
   onCancel: () => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  uploadHandler: (file: File, setImageUrlCallback: (url: string) => void) => Promise<void>;
   uploading: boolean;
 }) => {
+  const { toast } = useToast(); // Added for error toasts in form
   const [formData, setFormData] = useState({
     nome: pizza.nome,
     ingredientes: pizza.ingredientes,
@@ -299,6 +312,29 @@ const EditPizzaForm = ({
     ativo: pizza.ativo,
     tipo: pizza.tipo || 'salgada'
   });
+
+  const handleFormImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Consider adding a form-specific uploading state if needed: setFormUploading(true);
+    try {
+      await uploadHandler(file, (newUrl) => {
+        setFormData(prev => ({ ...prev, imagem_url: newUrl }));
+      });
+      // Optional: toast for success from within the form
+      // toast({ title: "Sucesso", description: "Imagem do formulário atualizada." });
+    } catch (error) {
+      console.error("Error uploading image in form:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar a imagem no formulário.",
+        variant: "destructive",
+      });
+    } finally {
+      // Consider adding a form-specific uploading state if needed: setFormUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -327,9 +363,9 @@ const EditPizzaForm = ({
           <Input
             type="file"
             accept="image/*"
-            onChange={onImageUpload}
+            onChange={handleFormImageChange}
             className="bg-gray-700 border-gray-600 text-white text-sm"
-            disabled={uploading}
+            disabled={uploading} // This 'uploading' is from PizzaManager's state
           />
           <Button
             type="button"
