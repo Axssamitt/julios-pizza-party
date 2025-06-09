@@ -383,6 +383,13 @@ const EditPizzaForm = ({
           className="bg-gray-700 border-gray-600 text-white text-sm"
           placeholder="URL da imagem"
         />
+        {formData.imagem_url && (
+          <img
+            src={formData.imagem_url}
+            alt="Preview da Pizza"
+            className="mt-2 w-32 h-32 object-cover rounded border border-gray-600"
+          />
+        )}
       </div>
       <div className="flex items-center space-x-2">
         <input
