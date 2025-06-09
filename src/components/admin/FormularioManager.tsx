@@ -93,11 +93,16 @@ export const FormularioManager = () => {
 
   // Agrupar por data do evento
   const formulariosAgrupados = formularios.reduce((acc, formulario) => {
-    const dataEvento = formulario.data_evento;
-    if (!acc[dataEvento]) {
-      acc[dataEvento] = [];
+    // Adicionar 'T00:00:00' para evitar problemas de fuso horário ao criar o objeto Date
+    const date = new Date(formulario.data_evento + 'T00:00:00');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const groupKey = `${month}/${year}`;
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
     }
-    acc[dataEvento].push(formulario);
+    acc[groupKey].push(formulario);
     return acc;
   }, {} as Record<string, FormularioContato[]>);
 
@@ -134,21 +139,27 @@ export const FormularioManager = () => {
       ) : (
         <div className="space-y-8">
           {Object.entries(formulariosAgrupados)
-            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-            .map(([dataEvento, formularios]) => (
-              <div key={dataEvento} className="space-y-4">
+            .sort(([keyA], [keyB]) => {
+              const [monthA, yearA] = keyA.split('/').map(Number);
+              const [monthB, yearB] = keyB.split('/').map(Number);
+              const dateA = new Date(yearA, monthA - 1); // Mês é 0-indexado no construtor Date
+              const dateB = new Date(yearB, monthB - 1);
+              return dateA.getTime() - dateB.getTime();
+            })
+            .map(([groupKey, formulariosDoMes]) => (
+              <div key={groupKey} className="space-y-4">
                 <div className="flex items-center gap-2 text-white">
                   <Calendar className="h-5 w-5 text-orange-400" />
                   <h3 className="text-xl font-semibold">
-                    Eventos em {formatDate(dataEvento)}
+                    Eventos em {groupKey}
                   </h3>
                   <Badge variant="secondary" className="ml-2">
-                    {formularios.length} evento(s)
+                    {formulariosDoMes.length} evento(s)
                   </Badge>
                 </div>
                 
                 <div className="grid gap-4">
-                  {formularios.map((formulario) => (
+                  {formulariosDoMes.map((formulario) => (
                     <Card key={formulario.id} className="bg-gray-800 border-gray-700">
                       <CardHeader>
                         <div className="flex justify-between items-start">

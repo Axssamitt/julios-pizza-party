@@ -64,26 +64,6 @@ const Cardapio = () => {
     );
   }
 
-  const PizzaCard = ({ pizza }: { pizza: Pizza }) => (
-    <div className="bg-gray-800 rounded-lg overflow-hidden shadow-xl hover:transform hover:scale-105 transition-all duration-300">
-      <div className="relative h-64">
-        <img 
-          src={pizza.imagem_url || 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400&h=400&fit=crop'} 
-          alt={pizza.nome}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <div className="absolute top-4 right-4 bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-          {pizza.tipo === 'doce' ? 'Doce' : 'Salgada'}
-        </div>
-      </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-white mb-3">{pizza.nome}</h3>
-        <p className="text-gray-400 text-sm leading-relaxed">{pizza.ingredientes}</p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header />
@@ -108,11 +88,13 @@ const Cardapio = () => {
                   Pizzas Salgadas
                 </span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <ul className="list-none p-0 md:columns-2 lg:columns-3 gap-x-6">
                 {pizzasSalgadas.map((pizza) => (
-                  <PizzaCard key={pizza.id} pizza={pizza} />
+                  <li key={pizza.id} className="text-lg text-white p-3 bg-gray-800 rounded-md mb-3 break-inside-avoid-column shadow-md hover:bg-gray-700 transition-colors duration-200">
+                    {pizza.nome}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
@@ -124,11 +106,13 @@ const Cardapio = () => {
                   Pizzas Doces
                 </span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <ul className="list-none p-0 md:columns-2 lg:columns-3 gap-x-6">
                 {pizzasDoces.map((pizza) => (
-                  <PizzaCard key={pizza.id} pizza={pizza} />
+                  <li key={pizza.id} className="text-lg text-white p-3 bg-gray-800 rounded-md mb-3 break-inside-avoid-column shadow-md hover:bg-gray-700 transition-colors duration-200">
+                    {pizza.nome}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
 
