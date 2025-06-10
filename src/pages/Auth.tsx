@@ -135,7 +135,7 @@ const Auth = () => {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm text-gray-400">
-            Usuário padrão: admin@juliopizza.com / admin123
+            Informe o Usuário e Senha
           </div>
         </CardContent>
       </Card>

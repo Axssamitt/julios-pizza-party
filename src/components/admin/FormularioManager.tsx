@@ -57,11 +57,13 @@ export const FormularioManager = () => {
   };
 
   // Filtrar formulários baseado nos filtros aplicados
-  const formulariosFiltrados = formularios.filter((formulario) => {
-    const nomeMatch = formulario.nome_completo.toLowerCase().includes(filtroNome.toLowerCase());
-    const dataMatch = filtroData ? formulario.data_evento.includes(filtroData) : true;
-    return nomeMatch && dataMatch;
-  });
+const formulariosFiltrados = formularios.filter((formulario) => {
+  const termo = filtroNome.toLowerCase();
+  const nomeMatch = formulario.nome_completo.toLowerCase().includes(termo);
+  const cpfMatch = formulario.cpf.toLowerCase().includes(termo);
+  const dataMatch = filtroData ? formulario.data_evento.includes(filtroData) : true;
+  return (nomeMatch || cpfMatch) && dataMatch;
+});
 
   // Agrupar formulários filtrados por data do evento
   const formulariosPorData: FormulariosPorData = formulariosFiltrados.reduce((acc, formulario) => {

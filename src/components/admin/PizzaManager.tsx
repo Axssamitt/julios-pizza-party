@@ -279,17 +279,17 @@ export const PizzaManager = () => {
   );
 };
 
+// ...existing code...
+
 const EditPizzaForm = ({ 
   pizza, 
   onSave, 
   onCancel,
-  onImageUpload,
   uploading
 }: { 
   pizza: Pizza; 
   onSave: (updates: Partial<Pizza>) => void; 
   onCancel: () => void;
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   uploading: boolean;
 }) => {
   const [formData, setFormData] = useState({
@@ -300,34 +300,30 @@ const EditPizzaForm = ({
     tipo: pizza.tipo || 'salgada'
   });
 
+  // Função para upload e atualização do campo imagem_url
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setFormData((prev) => ({ ...prev, uploading: true }));
+      const imageUrl = await uploadImage(file, 'pizzas');
+      setFormData((prev) => ({ ...prev, imagem_url: imageUrl }));
+    } catch (error) {
+      // Trate o erro conforme necessário
+    } finally {
+      setFormData((prev) => ({ ...prev, uploading: false }));
+    }
+  };
+
   return (
     <div className="space-y-3">
-      <Input
-        value={formData.nome}
-        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-        className="bg-gray-700 border-gray-600 text-white text-sm"
-      />
-      <Textarea
-        value={formData.ingredientes}
-        onChange={(e) => setFormData({ ...formData, ingredientes: e.target.value })}
-        className="bg-gray-700 border-gray-600 text-white text-sm"
-        rows={3}
-      />
-      <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
-        <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="salgada">Salgada</SelectItem>
-          <SelectItem value="doce">Doce</SelectItem>
-        </SelectContent>
-      </Select>
+      {/* ...outros campos... */}
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Input
             type="file"
             accept="image/*"
-            onChange={onImageUpload}
+            onChange={handleImageUpload}
             className="bg-gray-700 border-gray-600 text-white text-sm"
             disabled={uploading}
           />
@@ -348,15 +344,7 @@ const EditPizzaForm = ({
           placeholder="URL da imagem"
         />
       </div>
-      <div className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={formData.ativo}
-          onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-          className="rounded"
-        />
-        <label className="text-white text-sm">Ativo</label>
-      </div>
+      {/* ...restante do formulário... */}
       <div className="flex space-x-2">
         <Button 
           size="sm" 

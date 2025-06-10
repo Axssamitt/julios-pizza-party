@@ -109,26 +109,27 @@ export const ContratoManager = () => {
     setItensAdicionais(itensAdicionais.filter((_, i) => i !== index));
   };
 
-  const gerarContrato = (formulario: Formulario) => {
-    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-    const entrada = calcularEntrada(valorTotal);
-    const restante = valorTotal - entrada;
-    const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
-    const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
-    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
-    
-    let itensTexto = '';
-    if (itensAdicionais.length > 0) {
-      itensTexto = '\n\nITENS ADICIONAIS:\n';
-      itensAdicionais.forEach(item => {
-        itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
-      });
-    }
-    
-    const contrato = `══════════════════════════════════════════════════════════
-                     JULIO'S PIZZA HOUSE
-                    CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-══════════════════════════════════════════════════════════
+  // ...existing code...
+
+const gerarContrato = (formulario: Formulario) => {
+  const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
+  const entrada = calcularEntrada(valorTotal);
+  const restante = valorTotal - entrada;
+  const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
+  const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
+  const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+  
+  let itensTexto = '';
+  if (itensAdicionais.length > 0) {
+    itensTexto = '\n\nITENS ADICIONAIS:\n';
+    itensAdicionais.forEach(item => {
+      itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
+    });
+  }
+  
+  const contrato = `
+JULIO'S PIZZA HOUSE
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
 CONTRATANTE: ${formulario.nome_completo.toUpperCase()}
 CPF: ${formulario.cpf}
@@ -141,18 +142,13 @@ Londrina - Paraná
 CPF: 034.988.389-03
 Responsável: Sr. Júlio Cesar Fermino
 
-──────────────────────────────────────────────────────────
-
 OBJETO DO CONTRATO
 
-O presente contrato tem por objeto a prestação de serviços 
-de rodízio de pizza para evento que se realizará em:
+O presente contrato tem por objeto a prestação de serviços de rodízio de pizza para evento que se realizará em:
 
 Data: ${formatDate(formulario.data_evento)}
 Horário: ${formatTime(formulario.horario)} às ${String(parseInt(formulario.horario.split(':')[0]) + 3).padStart(2, '0')}:${formulario.horario.split(':')[1]}
 Local: ${formulario.endereco_evento.toUpperCase()}
-
-──────────────────────────────────────────────────────────
 
 DETALHES DO EVENTO
 
@@ -161,16 +157,12 @@ Número de pessoas confirmadas:
 • Crianças (5-9 anos): ${formulario.quantidade_criancas} pessoas
 • Total: ${formulario.quantidade_adultos + formulario.quantidade_criancas} pessoas${itensTexto}
 
-──────────────────────────────────────────────────────────
-
 OBRIGAÇÕES DA CONTRATANTE
 
 A CONTRATANTE deverá:
 • Fornecer todas as informações necessárias
 • Efetuar o pagamento conforme estabelecido
 • Disponibilizar local ventilado e tomada 220V
-
-──────────────────────────────────────────────────────────
 
 OBRIGAÇÕES DA CONTRATADA
 
@@ -180,10 +172,7 @@ A CONTRATADA se compromete a:
 • Manter funcionários uniformizados
 • Preparar quantidade suficiente para até 10% a mais
 
-OBSERVAÇÃO: Excedente de horário será cobrado 
-R$ 300,00 a cada meia hora ultrapassada.
-
-──────────────────────────────────────────────────────────
+OBSERVAÇÃO: Excedente de horário será cobrado R$ 300,00 a cada meia hora ultrapassada.
 
 VALORES E FORMA DE PAGAMENTO
 
@@ -199,40 +188,30 @@ Forma de pagamento:
 • Restante: R$ ${restante.toFixed(2).replace('.', ',')}
   (A ser pago no dia do evento em dinheiro)
 
-──────────────────────────────────────────────────────────
-
 CANCELAMENTO
 
-O contrato pode ser rescindido por qualquer parte com 
-comunicação formal até 10 dias antes do evento, com 
-devolução da entrada. Cancelamento após pagamento da 
-entrada: valor será creditado para futura contratação 
-em até 30 dias.
-
-──────────────────────────────────────────────────────────
+O contrato pode ser rescindido por qualquer parte com comunicação formal até 10 dias antes do evento, com devolução da entrada. Cancelamento após pagamento da entrada: valor será creditado para futura contratação em até 30 dias.
 
 LONDRINA, ${new Date().toLocaleDateString('pt-BR')}
-
 
 _________________________________    _________________________________
         CONTRATANTE                           CONTRATADA
     ${formulario.nome_completo}              Júlio Cesar Fermino
       CPF: ${formulario.cpf}                 CPF: 034.988.389-03
+`;
 
-══════════════════════════════════════════════════════════`;
+  setContratoGerado(contrato);
+};
 
-    setContratoGerado(contrato);
-  };
-
+// ...existing code...
   const gerarRecibo = (formulario: Formulario) => {
-    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-    const entrada = calcularEntrada(valorTotal);
-    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
-    
-    const recibo = `══════════════════════════════════════════════════════════
-                     JULIO'S PIZZA HOUSE
-                        RECIBO DE ENTRADA
-══════════════════════════════════════════════════════════
+  const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
+  const entrada = calcularEntrada(valorTotal);
+  const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+  
+  const recibo = `
+JULIO'S PIZZA HOUSE
+RECIBO DE ENTRADA
 
 RECIBO Nº: ${formulario.id.substring(0, 8).toUpperCase()}
 
@@ -243,8 +222,6 @@ Endereço: ${formulario.endereco}
 A importância de: R$ ${entrada.toFixed(2).replace('.', ',')}
 (${numberToWordsBrazilian(entrada)})
 
-──────────────────────────────────────────────────────────
-
 REFERENTE A:
 Entrada para contratação de serviço de rodízio de pizza
 
@@ -254,15 +231,11 @@ DETALHES DO EVENTO:
 • Local: ${formulario.endereco_evento}
 • Pessoas: ${formulario.quantidade_adultos} adultos${formulario.quantidade_criancas > 0 ? ` e ${formulario.quantidade_criancas} crianças` : ''}
 
-──────────────────────────────────────────────────────────
-
 RESUMO FINANCEIRO:
 • Valor total do serviço: R$ ${valorTotal.toFixed(2).replace('.', ',')}
 • Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
 • Saldo restante: R$ ${(valorTotal - entrada).toFixed(2).replace('.', ',')}
   (a ser pago no dia do evento)
-
-──────────────────────────────────────────────────────────
 
 Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
 
@@ -270,31 +243,34 @@ _________________________________
 Júlio Cesar Fermino
 CPF: 034.988.389-03
 Júlio's Pizza House
+`;
 
-══════════════════════════════════════════════════════════`;
+  setReciboGerado(recibo);
+};
 
-    setReciboGerado(recibo);
-  };
 
-  const downloadPDF = (content: string, filename: string) => {
-    const doc = new jsPDF();
-    const lines = content.split('\n');
-    
-    doc.setFont('courier');
-    doc.setFontSize(10);
-    
-    let y = 20;
-    lines.forEach(line => {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(line, 10, y);
-      y += 5;
-    });
-    
-    doc.save(filename);
-  };
+const downloadPDF = (content: string, filename: string) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  doc.setFont('courier');
+  doc.setFontSize(11);
+
+  const marginLeft = 15;
+  const marginRight = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const usableWidth = pageWidth - marginLeft - marginRight;
+
+  doc.text(content, marginLeft, 20, {
+    maxWidth: usableWidth,
+    align: 'justify'
+  });
+
+  doc.save(filename);
+};
 
   return (
     <div className="space-y-6">
