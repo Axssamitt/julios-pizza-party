@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Users, Clock, MapPin, Phone, User, FileText } from 'lucide-react';
+import { Calendar, Users, Clock, MapPin, Phone, User, FileText, Search } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -32,6 +33,8 @@ interface FormulariosPorData {
 export const FormularioManager = () => {
   const [formularios, setFormularios] = useState<FormularioContato[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroData, setFiltroData] = useState('');
 
   useEffect(() => {
     fetchFormularios();
@@ -53,8 +56,15 @@ export const FormularioManager = () => {
     }
   };
 
-  // Agrupar formulários por data do evento
-  const formulariosPorData: FormulariosPorData = formularios.reduce((acc, formulario) => {
+  // Filtrar formulários baseado nos filtros aplicados
+  const formulariosFiltrados = formularios.filter((formulario) => {
+    const nomeMatch = formulario.nome_completo.toLowerCase().includes(filtroNome.toLowerCase());
+    const dataMatch = filtroData ? formulario.data_evento.includes(filtroData) : true;
+    return nomeMatch && dataMatch;
+  });
+
+  // Agrupar formulários filtrados por data do evento
+  const formulariosPorData: FormulariosPorData = formulariosFiltrados.reduce((acc, formulario) => {
     const dataEvento = formulario.data_evento;
     if (!acc[dataEvento]) {
       acc[dataEvento] = [];
@@ -110,8 +120,31 @@ export const FormularioManager = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Orçamentos por Data</h2>
         <Badge variant="outline" className="text-sm">
-          Total: {formularios.length} orçamentos
+          Total: {formulariosFiltrados.length} orçamentos
         </Badge>
+      </div>
+
+      {/* Filtros */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            placeholder="Filtrar por nome..."
+            value={filtroNome}
+            onChange={(e) => setFiltroNome(e.target.value)}
+            className="pl-10 bg-gray-800 border-gray-700 text-white"
+          />
+        </div>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            type="date"
+            placeholder="Filtrar por data do evento..."
+            value={filtroData}
+            onChange={(e) => setFiltroData(e.target.value)}
+            className="pl-10 bg-gray-800 border-gray-700 text-white"
+          />
+        </div>
       </div>
 
       {Object.keys(formulariosPorData).length === 0 ? (

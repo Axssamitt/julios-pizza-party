@@ -49,14 +49,14 @@ export const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8">
             {menuItems.map((item) => {
               if (item.href.startsWith('/')) {
                 return (
                   <Link
                     key={item.label}
                     to={item.href}
-                    className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
+                    className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-center ${
                       item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-1 rounded-md border border-orange-500/50' : ''
                     }`}
                   >
@@ -68,7 +68,7 @@ export const Header = () => {
                 <button
                   key={item.label}
                   onClick={() => handleMenuClick(item.href)}
-                  className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium"
+                  className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-center"
                 >
                   {item.label}
                 </button>
@@ -97,8 +97,8 @@ export const Header = () => {
                     <Link
                       key={item.label}
                       to={item.href}
-                      className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
-                        item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50 text-center' : ''
+                      className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-center ${
+                        item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50' : ''
                       }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -110,7 +110,7 @@ export const Header = () => {
                   <button
                     key={item.label}
                     onClick={() => handleMenuClick(item.href)}
-                    className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-left"
+                    className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-center"
                   >
                     {item.label}
                   </button>
