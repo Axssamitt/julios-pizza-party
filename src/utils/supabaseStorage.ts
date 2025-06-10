@@ -55,3 +55,83 @@ export const deleteImage = async (url: string): Promise<boolean> => {
     return false;
   }
 };
+
+export const formatPhoneBrazil = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, '');
+  
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  } else if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+  }
+  
+  return phone;
+};
+
+export const numberToWordsBrazilian = (num: number): string => {
+  const unidades = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+  const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+  if (num === 0) return 'zero reais';
+  if (num === 100) return 'cem reais';
+
+  const inteiro = Math.floor(num);
+  const centavos = Math.round((num - inteiro) * 100);
+
+  let resultado = '';
+
+  if (inteiro >= 1000) {
+    const milhares = Math.floor(inteiro / 1000);
+    if (milhares === 1) {
+      resultado += 'mil';
+    } else {
+      resultado += convertirCentenas(milhares) + ' mil';
+    }
+    
+    const resto = inteiro % 1000;
+    if (resto > 0) {
+      resultado += ' e ' + convertirCentenas(resto);
+    }
+  } else {
+    resultado = convertirCentenas(inteiro);
+  }
+
+  resultado += inteiro === 1 ? ' real' : ' reais';
+
+  if (centavos > 0) {
+    resultado += ' e ' + convertirCentenas(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
+  }
+
+  return resultado;
+
+  function convertirCentenas(n: number): string {
+    if (n === 0) return '';
+    
+    let texto = '';
+    
+    if (n >= 100) {
+      const c = Math.floor(n / 100);
+      texto += centenas[c];
+      n %= 100;
+      if (n > 0) texto += ' e ';
+    }
+    
+    if (n >= 20) {
+      const d = Math.floor(n / 10);
+      texto += dezenas[d];
+      n %= 10;
+      if (n > 0) texto += ' e ';
+    } else if (n >= 10) {
+      texto += especiais[n - 10];
+      n = 0;
+    }
+    
+    if (n > 0) {
+      texto += unidades[n];
+    }
+    
+    return texto;
+  }
+};

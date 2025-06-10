@@ -71,7 +71,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
               DADOS DO CONTRATANTE
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-justify">
               <div>
                 <p><strong>Nome:</strong> {formulario.nome_completo}</p>
                 <p><strong>CPF:</strong> {formulario.cpf}</p>
@@ -88,7 +88,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
               DADOS DO EVENTO
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-justify">
               <div>
                 <p><strong>Data do Evento:</strong> {formatDate(formulario.data_evento)}</p>
                 <p><strong>Horário:</strong> {formatTime(formulario.horario)}</p>
@@ -107,7 +107,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
               VALORES DO SERVIÇO
             </h3>
-            <div className="bg-gray-50 p-6 rounded">
+            <div className="bg-gray-50 p-6 rounded text-justify">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p><strong>Valor de Entrada:</strong> {formatCurrency(formulario.valor_entrada)}</p>
@@ -127,7 +127,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
               <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
                 OBSERVAÇÕES
               </h3>
-              <p className="bg-gray-50 p-4 rounded">{formulario.observacoes}</p>
+              <p className="bg-gray-50 p-4 rounded text-justify">{formulario.observacoes}</p>
             </div>
           )}
 
@@ -136,7 +136,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
               TERMOS E CONDIÇÕES
             </h3>
-            <div className="text-sm text-gray-700 space-y-2">
+            <div className="text-sm text-gray-700 space-y-2 text-justify">
               <p>• O serviço inclui rodízio de pizzas salgadas e doces durante o período contratado.</p>
               <p>• O pagamento deverá ser realizado conforme acordado entre as partes.</p>
               <p>• Cancelamentos devem ser comunicados com antecedência mínima de 24 horas.</p>
@@ -182,7 +182,7 @@ export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => 
         </CardContent>
       </Card>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           .print\\:hidden {
             display: none !important;

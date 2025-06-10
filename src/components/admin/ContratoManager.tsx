@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -442,7 +443,7 @@ Júlio's Pizza House
               </div>
             </CardHeader>
             <CardContent>
-              <div className="bg-white text-black p-4 rounded text-xs whitespace-pre-wrap font-mono max-h-96 overflow-y-auto">
+              <div className="bg-white text-black p-4 rounded text-xs whitespace-pre-wrap font-mono max-h-96 overflow-y-auto text-justify">
                 {contratoGerado || reciboGerado}
               </div>
             </CardContent>

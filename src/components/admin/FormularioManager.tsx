@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, FileText, Calendar, User, MapPin, Clock, Users, DollarSign } from 'lucide-react';
+import { Eye, FileText, Calendar, User, MapPin, Clock, Users, DollarSign, Search, Filter } from 'lucide-react';
 import { ContratoRecibo } from './ContratoRecibo';
 
 interface FormularioContato {
@@ -27,13 +28,20 @@ interface FormularioContato {
 
 export const FormularioManager = () => {
   const [formularios, setFormularios] = useState<FormularioContato[]>([]);
+  const [filteredFormularios, setFilteredFormularios] = useState<FormularioContato[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFormulario, setSelectedFormulario] = useState<FormularioContato | null>(null);
   const [showRecibo, setShowRecibo] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
     fetchFormularios();
   }, []);
+
+  useEffect(() => {
+    filterFormularios();
+  }, [formularios, searchTerm, dateFilter]);
 
   const fetchFormularios = async () => {
     try {
@@ -49,6 +57,25 @@ export const FormularioManager = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterFormularios = () => {
+    let filtered = formularios;
+
+    if (searchTerm) {
+      filtered = filtered.filter(formulario =>
+        formulario.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        formulario.cpf.includes(searchTerm)
+      );
+    }
+
+    if (dateFilter) {
+      filtered = filtered.filter(formulario =>
+        formulario.data_evento.includes(dateFilter)
+      );
+    }
+
+    setFilteredFormularios(filtered);
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -91,13 +118,18 @@ export const FormularioManager = () => {
     }
   };
 
-  // Agrupar por data do evento
-  const formulariosAgrupados = formularios.reduce((acc, formulario) => {
-    const dataEvento = formulario.data_evento;
-    if (!acc[dataEvento]) {
-      acc[dataEvento] = [];
+  const getMonthYear = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' });
+  };
+
+  // Agrupar por mês/ano
+  const formulariosAgrupados = filteredFormularios.reduce((acc, formulario) => {
+    const monthYear = getMonthYear(formulario.data_evento);
+    if (!acc[monthYear]) {
+      acc[monthYear] = [];
     }
-    acc[dataEvento].push(formulario);
+    acc[monthYear].push(formulario);
     return acc;
   }, {} as Record<string, FormularioContato[]>);
 
@@ -116,31 +148,89 @@ export const FormularioManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <h2 className="text-2xl font-bold text-white">Formulários de Contato</h2>
         <div className="text-sm text-gray-400">
-          Total: {formularios.length} formulários
+          Total: {filteredFormularios.length} de {formularios.length} formulários
         </div>
       </div>
+
+      {/* Filtros */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Filter size={20} />
+            Filtros de Pesquisa
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Input
+                placeholder="Buscar por nome ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Input
+                type="month"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="pl-10 bg-gray-700 border-gray-600 text-white"
+              />
+            </div>
+          </div>
+          {(searchTerm || dateFilter) && (
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setDateFilter('');
+                }}
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {Object.keys(formulariosAgrupados).length === 0 ? (
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="p-12 text-center">
             <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Nenhum formulário encontrado</h3>
-            <p className="text-gray-400">Os formulários de contato aparecerão aqui quando forem enviados.</p>
+            <h3 className="text-lg font-semibold text-white mb-2">
+              {formularios.length === 0 ? 'Nenhum formulário encontrado' : 'Nenhum resultado encontrado'}
+            </h3>
+            <p className="text-gray-400">
+              {formularios.length === 0 
+                ? 'Os formulários de contato aparecerão aqui quando forem enviados.'
+                : 'Tente ajustar os filtros de pesquisa.'
+              }
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-8">
           {Object.entries(formulariosAgrupados)
-            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-            .map(([dataEvento, formularios]) => (
-              <div key={dataEvento} className="space-y-4">
+            .sort(([a], [b]) => {
+              const dateA = new Date(a + ' 01, 2000');
+              const dateB = new Date(b + ' 01, 2000');
+              return dateB.getTime() - dateA.getTime();
+            })
+            .map(([monthYear, formularios]) => (
+              <div key={monthYear} className="space-y-4">
                 <div className="flex items-center gap-2 text-white">
                   <Calendar className="h-5 w-5 text-orange-400" />
-                  <h3 className="text-xl font-semibold">
-                    Eventos em {formatDate(dataEvento)}
+                  <h3 className="text-xl font-semibold capitalize">
+                    {monthYear}
                   </h3>
                   <Badge variant="secondary" className="ml-2">
                     {formularios.length} evento(s)
@@ -148,7 +238,9 @@ export const FormularioManager = () => {
                 </div>
                 
                 <div className="grid gap-4">
-                  {formularios.map((formulario) => (
+                  {formularios
+                    .sort((a, b) => new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime())
+                    .map((formulario) => (
                     <Card key={formulario.id} className="bg-gray-800 border-gray-700">
                       <CardHeader>
                         <div className="flex justify-between items-start">
@@ -167,6 +259,11 @@ export const FormularioManager = () => {
                       
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Calendar className="h-4 w-4 text-orange-400" />
+                            <span>{formatDate(formulario.data_evento)}</span>
+                          </div>
+                          
                           <div className="flex items-center gap-2 text-gray-300">
                             <Clock className="h-4 w-4 text-orange-400" />
                             <span>{formatTime(formulario.horario)}</span>
@@ -190,10 +287,6 @@ export const FormularioManager = () => {
                           <div className="flex items-center gap-2 text-gray-300">
                             <DollarSign className="h-4 w-4 text-orange-400" />
                             <span>Total: {formatCurrency(formulario.valor_total)}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 text-gray-300">
-                            <span className="text-xs">ID: {formulario.id.slice(0, 8)}...</span>
                           </div>
                         </div>
 
