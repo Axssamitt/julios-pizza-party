@@ -119,7 +119,7 @@ export const ContratoRecibo = ({ formulario, onClose, tipo = 'recibo' }: Contrat
           </CardContent>
         </Card>
 
-        <style jsx global>{`
+        <style>{`
           @media print {
             .print\\:hidden {
               display: none !important;
@@ -220,7 +220,7 @@ export const ContratoRecibo = ({ formulario, onClose, tipo = 'recibo' }: Contrat
         </CardContent>
       </Card>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           .print\\:hidden {
             display: none !important;
