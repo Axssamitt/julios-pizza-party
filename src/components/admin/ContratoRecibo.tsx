@@ -24,10 +24,9 @@ interface FormularioContato {
 interface ContratoReciboProps {
   formulario: FormularioContato;
   onClose: () => void;
-  tipo?: 'recibo' | 'contrato';
 }
 
-export const ContratoRecibo = ({ formulario, onClose, tipo = 'recibo' }: ContratoReciboProps) => {
+export const ContratoRecibo = ({ formulario, onClose }: ContratoReciboProps) => {
   const formatCurrency = (value: number | null) => {
     if (!value) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', {
@@ -48,164 +47,127 @@ export const ContratoRecibo = ({ formulario, onClose, tipo = 'recibo' }: Contrat
     window.print();
   };
 
-  if (tipo === 'recibo') {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <Card className="bg-white max-w-md w-full print:max-h-none print:overflow-visible">
-          <CardContent className="p-0">
-            {/* Recibo no formato da imagem */}
-            <div className="border-2 border-black rounded-lg p-6 bg-white text-black">
-              <div className="text-center mb-4">
-                <div className="border border-black inline-block px-4 py-1 mb-2">
-                  <span className="font-bold text-lg">RECIBO</span>
-                  <span className="ml-4">Nº</span>
-                  <span className="ml-8">51 VALOR</span>
-                  <span className="ml-8 font-bold">{formatCurrency(formulario.valor_entrada)}</span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex">
-                  <span className="w-20">RECEBI(EMOS) DE</span>
-                  <div className="flex-1 border-b border-black ml-2">{formulario.nome_completo}</div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex">
-                  <span className="w-20">A QUANTIA DE</span>
-                  <div className="flex-1 border-b border-black ml-2">{formatCurrency(formulario.valor_entrada)}</div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex">
-                  <span className="w-20">CORRESPONDENTE A</span>
-                  <div className="flex-1 border-b border-black ml-2">ENTRADA DO EVENTO A SER REALIZADO NA DATA DE {formatDate(formulario.data_evento)}</div>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex">
-                  <span className="w-20">E PARA CLAREZA FIRMO(AMOS) O PRESENTE</span>
-                  <div className="flex-1 border-b border-black ml-2"></div>
-                </div>
-              </div>
-
-              <div className="text-right mb-6">
-                <div>LONDRINA, {new Date().toLocaleDateString('pt-BR')}</div>
-              </div>
-
-              <div className="text-center mb-4">
-                <div className="font-bold text-xl">JULIO'S PIZZA HOUSE</div>
-              </div>
-
-              <div className="text-center">
-                <div className="border-t border-black pt-2 mt-8 inline-block px-16">
-                  Assinatura
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex justify-center gap-4 mt-4 p-4 print:hidden">
-              <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
-                Imprimir Recibo
-              </Button>
-              <Button onClick={onClose} variant="outline">
-                Fechar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <style>{`
-          @media print {
-            .print\\:hidden {
-              display: none !important;
-            }
-            .print\\:max-h-none {
-              max-height: none !important;
-            }
-            .print\\:overflow-visible {
-              overflow: visible !important;
-            }
-            body {
-              print-color-adjust: exact;
-              -webkit-print-color-adjust: exact;
-            }
-            .fixed {
-              position: static !important;
-            }
-            .bg-black {
-              background: white !important;
-            }
-            .bg-opacity-50 {
-              background-opacity: 1 !important;
-            }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // Contrato conforme imagem anexa
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <Card className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto print:max-h-none print:overflow-visible">
         <CardContent className="p-8">
-          <div className="text-center mb-6">
-            <h1 className="text-xl font-bold mb-2">CONTRATO</h1>
-            <h2 className="text-lg font-bold">JULIO'S PIZZA HOUSE</h2>
+          {/* Cabeçalho */}
+          <div className="text-center mb-8 border-b-2 border-gray-800 pb-6">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">JÚLIO'S PIZZA HOUSE</h1>
+            <p className="text-lg text-gray-600">CNPJ: 00.000.000/0001-00</p>
+            <p className="text-gray-600">Londrina - PR | (43) 99126-7766</p>
+            <p className="text-gray-600">juliospizzahouse@gmail.com</p>
           </div>
 
-          <div className="mb-4">
-            <p><strong>CONTRATANTE:</strong> {formulario.nome_completo.toUpperCase()}, CPF nº {formulario.cpf}, residente e domiciliado à {formulario.endereco}.</p>
+          {/* Título do Documento */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 bg-gray-100 py-3 px-6 rounded">
+              CONTRATO DE PRESTAÇÃO DE SERVIÇOS - RODÍZIO DE PIZZAS
+            </h2>
           </div>
 
-          <div className="mb-4">
-            <p><strong>CONTRATADA:</strong> JULIO'S PIZZA HOUSE, com sede em Londrina, na Rua Alzira Postali Gewrher, nº 119, Bairro Jardim Catuai, CEP: 86086-230, Londrina - Paraná, inscrita no CPF sob o nº 034.988.389-03, neste ato representada por Júlio Cesar Fermino.</p>
+          {/* Dados do Cliente */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
+              DADOS DO CONTRATANTE
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p><strong>Nome:</strong> {formulario.nome_completo}</p>
+                <p><strong>CPF:</strong> {formulario.cpf}</p>
+                <p><strong>Telefone:</strong> {formulario.telefone}</p>
+              </div>
+              <div>
+                <p><strong>Endereço:</strong> {formulario.endereco}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <p>As partes acima identificadas têm, entre si, justo e acertado o presente Contrato de Prestação de Serviços de Buffet, que se regerá pelas cláusulas seguintes e pelas condições de preço, forma e termo de pagamento descritas no presente.</p>
+          {/* Dados do Evento */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
+              DADOS DO EVENTO
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p><strong>Data do Evento:</strong> {formatDate(formulario.data_evento)}</p>
+                <p><strong>Horário:</strong> {formatTime(formulario.horario)}</p>
+                <p><strong>Local:</strong> {formulario.endereco_evento}</p>
+              </div>
+              <div>
+                <p><strong>Quantidade de Adultos:</strong> {formulario.quantidade_adultos}</p>
+                <p><strong>Quantidade de Crianças:</strong> {formulario.quantidade_criancas || 0}</p>
+                <p><strong>Total de Participantes:</strong> {formulario.quantidade_adultos + (formulario.quantidade_criancas || 0)}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-bold">DO OBJETO DO CONTRATO</h3>
-            <p><strong>Cláusula 1ª:</strong> O objeto do presente contrato é a prestação pela CONTRATADA à CONTRATANTE do serviço de rodízio de pizza para evento que se realizará no endereço {formulario.endereco_evento}, conforme as especificações seguintes: Data: {formatDate(formulario.data_evento)}, horário: {formatTime(formulario.horario)}, total de convidados {formulario.quantidade_adultos + (formulario.quantidade_criancas || 0)} pessoas.</p>
+          {/* Valores */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
+              VALORES DO SERVIÇO
+            </h3>
+            <div className="bg-gray-50 p-6 rounded">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Valor de Entrada:</strong> {formatCurrency(formulario.valor_entrada)}</p>
+                  <p><strong>Valor Total:</strong> {formatCurrency(formulario.valor_total)}</p>
+                </div>
+                <div>
+                  <p><strong>Status:</strong> <span className="capitalize font-semibold">{formulario.status}</span></p>
+                  <p><strong>Data do Contrato:</strong> {formatDate(formulario.created_at)}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-bold">O EVENTO</h3>
-            <p><strong>Cláusula 2ª:</strong> O evento para qual se realizará no contratação do serviço de Rodízio de Pizza, é o evento de confraternização marcado para {formatDate(formulario.data_evento)} às {formatTime(formulario.horario)}, com {formulario.quantidade_adultos} adultos e {formulario.quantidade_criancas || 0} crianças (5 a 9 anos), totalizando {formulario.quantidade_adultos + (formulario.quantidade_criancas || 0)} pessoas. Endereço: {formulario.endereco_evento}. O evento realizado será no horário e local indicado na cláusula 1ª, devendo o horário ser respeitado pela CONTRATANTE, sob pena de cancelamento do presente contrato.</p>
+          {/* Observações */}
+          {formulario.observacoes && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
+                OBSERVAÇÕES
+              </h3>
+              <p className="bg-gray-50 p-4 rounded">{formulario.observacoes}</p>
+            </div>
+          )}
+
+          {/* Termos e Condições */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-300 pb-2">
+              TERMOS E CONDIÇÕES
+            </h3>
+            <div className="text-sm text-gray-700 space-y-2">
+              <p>• O serviço inclui rodízio de pizzas salgadas e doces durante o período contratado.</p>
+              <p>• O pagamento deverá ser realizado conforme acordado entre as partes.</p>
+              <p>• Cancelamentos devem ser comunicados com antecedência mínima de 24 horas.</p>
+              <p>• A empresa se compromete a fornecer serviço de qualidade e pontualidade.</p>
+              <p>• Este contrato é válido apenas para a data e local especificados.</p>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-bold">OBRIGAÇÕES DA CONTRATANTE</h3>
-            <p><strong>Cláusula 3ª:</strong> A CONTRATANTE deverá fornecer à CONTRATADA todas as informações necessárias à realização adequada do serviço de rodízio de pizza, devendo especificar os detalhes do evento. Necessário que o local seja ventilado e que tenha tomada 220V para funcionamento do equipamento de pizzas.</p>
-            <p><strong>Cláusula 4ª:</strong> A CONTRATANTE deverá efetuar o pagamento na forma e condições estabelecidas na cláusula 5ª.</p>
+          {/* Assinaturas */}
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="text-center">
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <p className="font-bold">CONTRATANTE</p>
+                  <p className="text-sm">{formulario.nome_completo}</p>
+                  <p className="text-sm">CPF: {formulario.cpf}</p>
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <p className="font-bold">CONTRATADO</p>
+                  <p className="text-sm">Júlio's Pizza House</p>
+                  <p className="text-sm">CNPJ: 00.000.000/0001-00</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-bold">OBRIGAÇÕES DA CONTRATADA</h3>
-            <p><strong>Cláusula 5ª:</strong> É dever da CONTRATADA executar um serviço de rodízio pizza de acordo com as especificações previamente combinadas entre as partes, qualidade alimentar e garantir que será prestado um serviço conforme os padrões da CONTRATADA. A CONTRATADA será obrigada a fornecer no mínimo 01 pizzaiolo e 01 garçom para servir os convidados da festa.</p>
-            <p><strong>Obs.:</strong> O excedente de horário será cobrado 30000 (trinta mil) reais a cada meia hora ultrapassada.</p>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-bold">VALORES E FORMA DE PAGAMENTO</h3>
-            <p><strong>Cláusula 6ª:</strong> A CONTRATADA obterá um serviço de rodízio pizza de acordo com as especificações oferecidas, sendo estabelecido o preço total de {formatCurrency(formulario.valor_total)} para o presente contrato. Sendo pago 40% de entrada no valor de {formatCurrency(formulario.valor_entrada)} e o restante no valor de {formatCurrency((formulario.valor_total || 0) - (formulario.valor_entrada || 0))} no dia do evento.</p>
-            <p><strong>Cláusula 7ª:</strong> A CONTRATADA compromete-se a executar o cardápio conforme nas CONTRATANTE, cujas especificações incluem: 01 fornelho a ser servido, proporcionalmente em documento anexo ao presente</p>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="font-bold">CANCELAMENTO</h3>
-            <p><strong>Cláusula 8ª:</strong> A CONTRATADA fornecerá pelo menos 1 pizzaiolo e 1 garçom para servir os convidados da mesa.</p>
-          </div>
-
-          <div className="text-center">
-            <p>Página 1</p>
+          {/* Rodapé */}
+          <div className="text-center text-sm text-gray-500 border-t border-gray-300 pt-4">
+            <p>Documento gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
           </div>
 
           {/* Botões de Ação */}
@@ -220,7 +182,7 @@ export const ContratoRecibo = ({ formulario, onClose, tipo = 'recibo' }: Contrat
         </CardContent>
       </Card>
 
-      <style>{`
+      <style jsx global>{`
         @media print {
           .print\\:hidden {
             display: none !important;

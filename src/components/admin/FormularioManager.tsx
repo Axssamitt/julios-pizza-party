@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { Eye, FileText, Calendar, User, MapPin, Clock, Users, DollarSign } from 'lucide-react';
 import { ContratoRecibo } from './ContratoRecibo';
-import { Eye, Trash2, FileText, Receipt, Users, Calendar, Search, Filter } from 'lucide-react';
-import { formatPhoneBrazil } from '@/utils/supabaseStorage';
 
 interface FormularioContato {
   id: string;
@@ -27,17 +25,11 @@ interface FormularioContato {
   created_at: string;
 }
 
-interface FormularioGrouped {
-  [monthYear: string]: FormularioContato[];
-}
-
 export const FormularioManager = () => {
   const [formularios, setFormularios] = useState<FormularioContato[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFormulario, setSelectedFormulario] = useState<FormularioContato | null>(null);
-  const [documentType, setDocumentType] = useState<'recibo' | 'contrato'>('recibo');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [showRecibo, setShowRecibo] = useState(false);
 
   useEffect(() => {
     fetchFormularios();
@@ -48,7 +40,7 @@ export const FormularioManager = () => {
       const { data, error } = await supabase
         .from('formularios_contato')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('data_evento', { ascending: true });
 
       if (error) throw error;
       setFormularios(data || []);
@@ -67,87 +59,10 @@ export const FormularioManager = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
-      setFormularios(prev => 
-        prev.map(form => 
-          form.id === id ? { ...form, status: newStatus } : form
-        )
-      );
+      fetchFormularios();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
     }
-  };
-
-  const deleteFormulario = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este formulário?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('formularios_contato')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      setFormularios(prev => prev.filter(form => form.id !== id));
-    } catch (error) {
-      console.error('Erro ao excluir formulário:', error);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pendente: { label: 'Pendente', variant: 'default' as const, className: 'bg-orange-500 text-white' },
-      confirmado: { label: 'Confirmado', variant: 'default' as const, className: 'bg-green-600 text-white' },
-      cancelado: { label: 'Cancelado', variant: 'destructive' as const, className: 'bg-red-600 text-white' }
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente;
-    
-    return (
-      <Badge variant={config.variant} className={config.className}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getStatusCounts = () => {
-    return {
-      pendente: formularios.filter(f => f.status === 'pendente').length,
-      confirmado: formularios.filter(f => f.status === 'confirmado').length,
-      cancelado: formularios.filter(f => f.status === 'cancelado').length
-    };
-  };
-
-  const filterFormularios = () => {
-    return formularios.filter(form => {
-      const matchesSearch = !searchTerm || 
-        form.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        form.cpf.includes(searchTerm);
-      
-      const matchesDate = !dateFilter || 
-        form.data_evento.includes(dateFilter) ||
-        new Date(form.data_evento).toLocaleDateString('pt-BR').includes(dateFilter);
-      
-      return matchesSearch && matchesDate;
-    });
-  };
-
-  const groupFormulariosByMonth = (formularios: FormularioContato[]): FormularioGrouped => {
-    return formularios.reduce((groups, form) => {
-      const date = new Date(form.data_evento);
-      const monthYear = date.toLocaleDateString('pt-BR', { 
-        month: 'long', 
-        year: 'numeric' 
-      });
-      
-      if (!groups[monthYear]) {
-        groups[monthYear] = [];
-      }
-      
-      groups[monthYear].push(form);
-      return groups;
-    }, {} as FormularioGrouped);
   };
 
   const formatCurrency = (value: number | null) => {
@@ -166,196 +81,170 @@ export const FormularioManager = () => {
     return timeString.slice(0, 5);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pendente': return 'bg-yellow-500';
+      case 'confirmado': return 'bg-green-500';
+      case 'cancelado': return 'bg-red-500';
+      case 'concluido': return 'bg-blue-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Agrupar por data do evento
+  const formulariosAgrupados = formularios.reduce((acc, formulario) => {
+    const dataEvento = formulario.data_evento;
+    if (!acc[dataEvento]) {
+      acc[dataEvento] = [];
+    }
+    acc[dataEvento].push(formulario);
+    return acc;
+  }, {} as Record<string, FormularioContato[]>);
+
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+        <h2 className="text-2xl font-bold text-white">Formulários de Contato</h2>
+        <div className="animate-pulse space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-32 bg-gray-700 rounded"></div>
+          ))}
         </div>
       </div>
     );
   }
 
-  const statusCounts = getStatusCounts();
-  const filteredFormularios = filterFormularios();
-  const groupedFormularios = groupFormulariosByMonth(filteredFormularios);
-
   return (
     <div className="space-y-6">
-      {/* Header com estatísticas */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Formulários de Contato</h2>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span className="text-sm text-gray-300">Pendente: {statusCounts.pendente}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-              <span className="text-sm text-gray-300">Confirmado: {statusCounts.confirmado}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-              <span className="text-sm text-gray-300">Cancelado: {statusCounts.cancelado}</span>
-            </div>
-          </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">Formulários de Contato</h2>
+        <div className="text-sm text-gray-400">
+          Total: {formularios.length} formulários
         </div>
       </div>
 
-      {/* Filtros de pesquisa */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Filtros de Pesquisa
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-300 mb-2 block">Pesquisar por nome ou CPF</label>
-              <Input
-                placeholder="Digite o nome ou CPF..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-300 mb-2 block">Filtrar por data</label>
-              <Input
-                placeholder="DD/MM/AAAA ou MM/AAAA"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {Object.keys(formulariosAgrupados).length === 0 ? (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-12 text-center">
+            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">Nenhum formulário encontrado</h3>
+            <p className="text-gray-400">Os formulários de contato aparecerão aqui quando forem enviados.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(formulariosAgrupados)
+            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+            .map(([dataEvento, formularios]) => (
+              <div key={dataEvento} className="space-y-4">
+                <div className="flex items-center gap-2 text-white">
+                  <Calendar className="h-5 w-5 text-orange-400" />
+                  <h3 className="text-xl font-semibold">
+                    Eventos em {formatDate(dataEvento)}
+                  </h3>
+                  <Badge variant="secondary" className="ml-2">
+                    {formularios.length} evento(s)
+                  </Badge>
+                </div>
+                
+                <div className="grid gap-4">
+                  {formularios.map((formulario) => (
+                    <Card key={formulario.id} className="bg-gray-800 border-gray-700">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <User className="h-5 w-5 text-orange-400" />
+                            <div>
+                              <CardTitle className="text-white">{formulario.nome_completo}</CardTitle>
+                              <p className="text-gray-400 text-sm">CPF: {formulario.cpf}</p>
+                            </div>
+                          </div>
+                          <Badge className={`${getStatusColor(formulario.status)} text-white`}>
+                            {formulario.status}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Clock className="h-4 w-4 text-orange-400" />
+                            <span>{formatTime(formulario.horario)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <MapPin className="h-4 w-4 text-orange-400" />
+                            <span className="truncate">{formulario.endereco_evento}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <Users className="h-4 w-4 text-orange-400" />
+                            <span>{formulario.quantidade_adultos} adultos, {formulario.quantidade_criancas || 0} crianças</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <DollarSign className="h-4 w-4 text-orange-400" />
+                            <span>Entrada: {formatCurrency(formulario.valor_entrada)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <DollarSign className="h-4 w-4 text-orange-400" />
+                            <span>Total: {formatCurrency(formulario.valor_total)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-gray-300">
+                            <span className="text-xs">ID: {formulario.id.slice(0, 8)}...</span>
+                          </div>
+                        </div>
 
-      {/* Lista agrupada por mês/ano */}
-      {Object.entries(groupedFormularios).map(([monthYear, forms]) => (
-        <Card key={monthYear} className="bg-gray-800 border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-white capitalize flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              {monthYear}
-              <Badge variant="outline" className="ml-2 text-gray-300">
-                {forms.length} evento(s)
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {forms.map((formulario) => (
-              <div key={formulario.id} className="bg-gray-700 rounded-lg p-4 border border-gray-600">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold text-white">{formulario.nome_completo}</h3>
-                      {getStatusBadge(formulario.status)}
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">CPF:</span>
-                        <span>{formulario.cpf}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(formulario.data_evento)} às {formatTime(formulario.horario)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>{formulario.quantidade_adultos} adultos, {formulario.quantidade_criancas || 0} crianças</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">📞</span>
-                        <span>{formatPhoneBrazil(formulario.telefone)}</span>
-                      </div>
-                      <div className="col-span-1 md:col-span-2 flex items-center gap-2">
-                        <span className="font-medium">📍</span>
-                        <span className="truncate">{formulario.endereco_evento}</span>
-                      </div>
-                    </div>
-                  </div>
+                        {formulario.observacoes && (
+                          <div className="bg-gray-700 p-3 rounded">
+                            <p className="text-gray-300 text-sm">
+                              <strong>Observações:</strong> {formulario.observacoes}
+                            </p>
+                          </div>
+                        )}
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => updateStatus(formulario.id, 'confirmado')}
-                      disabled={formulario.status === 'confirmado'}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      Confirmar
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateStatus(formulario.id, 'cancelado')}
-                      disabled={formulario.status === 'cancelado'}
-                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                    >
-                      Cancelar
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedFormulario(formulario);
-                        setDocumentType('recibo');
-                      }}
-                      className="border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
-                    >
-                      <Receipt className="w-4 h-4 mr-1" />
-                      Recibo
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedFormulario(formulario);
-                        setDocumentType('contrato');
-                      }}
-                      className="border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white"
-                    >
-                      <FileText className="w-4 h-4 mr-1" />
-                      Contrato
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => deleteFormulario(formulario.id)}
-                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedFormulario(formulario);
+                              setShowRecibo(true);
+                            }}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Ver Contrato
+                          </Button>
+                          
+                          <select
+                            value={formulario.status}
+                            onChange={(e) => updateStatus(formulario.id, e.target.value)}
+                            className="bg-gray-700 text-white border border-gray-600 rounded px-3 py-1 text-sm"
+                          >
+                            <option value="pendente">Pendente</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="cancelado">Cancelado</option>
+                            <option value="concluido">Concluído</option>
+                          </select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      ))}
-
-      {filteredFormularios.length === 0 && (
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="text-center py-8">
-            <p className="text-gray-400">Nenhum formulário encontrado com os filtros aplicados.</p>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
-      {selectedFormulario && (
+      {showRecibo && selectedFormulario && (
         <ContratoRecibo
           formulario={selectedFormulario}
-          tipo={documentType}
-          onClose={() => setSelectedFormulario(null)}
+          onClose={() => {
+            setShowRecibo(false);
+            setSelectedFormulario(null);
+          }}
         />
       )}
     </div>
