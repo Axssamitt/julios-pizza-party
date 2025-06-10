@@ -279,16 +279,14 @@ export const PizzaManager = () => {
   );
 };
 
-// ...existing code...
-
-const EditPizzaForm = ({ 
-  pizza, 
-  onSave, 
+const EditPizzaForm = ({
+  pizza,
+  onSave,
   onCancel,
-  uploading
-}: { 
-  pizza: Pizza; 
-  onSave: (updates: Partial<Pizza>) => void; 
+  uploading: globalUploading,
+}: {
+  pizza: Pizza;
+  onSave: (updates: Partial<Pizza>) => void;
   onCancel: () => void;
   uploading: boolean;
 }) => {
@@ -297,27 +295,52 @@ const EditPizzaForm = ({
     ingredientes: pizza.ingredientes,
     imagem_url: pizza.imagem_url || '',
     ativo: pizza.ativo,
-    tipo: pizza.tipo || 'salgada'
+    tipo: pizza.tipo || 'salgada',
   });
+  const [uploading, setUploading] = useState(false);
 
   // Função para upload e atualização do campo imagem_url
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploading(true);
     try {
-      setFormData((prev) => ({ ...prev, uploading: true }));
+      // Importação dinâmica para evitar problemas de dependência circular
+      const { uploadImage } = await import('@/utils/supabaseStorage');
       const imageUrl = await uploadImage(file, 'pizzas');
       setFormData((prev) => ({ ...prev, imagem_url: imageUrl }));
     } catch (error) {
-      // Trate o erro conforme necessário
+      // Aqui você pode exibir um toast de erro se quiser
+      alert('Erro ao fazer upload da imagem');
     } finally {
-      setFormData((prev) => ({ ...prev, uploading: false }));
+      setUploading(false);
     }
   };
 
   return (
     <div className="space-y-3">
-      {/* ...outros campos... */}
+      <Input
+        value={formData.nome}
+        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+        className="bg-gray-700 border-gray-600 text-white text-sm"
+        placeholder="Nome da pizza"
+      />
+      <Textarea
+        value={formData.ingredientes}
+        onChange={(e) => setFormData({ ...formData, ingredientes: e.target.value })}
+        className="bg-gray-700 border-gray-600 text-white text-sm"
+        placeholder="Ingredientes"
+        rows={3}
+      />
+      <Select value={formData.tipo} onValueChange={(value) => setFormData({ ...formData, tipo: value })}>
+        <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-sm">
+          <SelectValue placeholder="Selecione o tipo" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="salgada">Salgada</SelectItem>
+          <SelectItem value="doce">Doce</SelectItem>
+        </SelectContent>
+      </Select>
       <div className="space-y-2">
         <div className="flex items-center space-x-2">
           <Input
@@ -327,15 +350,9 @@ const EditPizzaForm = ({
             className="bg-gray-700 border-gray-600 text-white text-sm"
             disabled={uploading}
           />
-          <Button
-            type="button"
-            disabled={uploading}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Upload className="mr-1" size={12} />
-            {uploading ? 'Enviando...' : 'Upload'}
-          </Button>
+          {uploading && (
+            <span className="text-blue-400 text-xs">Enviando...</span>
+          )}
         </div>
         <Input
           value={formData.imagem_url}
@@ -343,20 +360,36 @@ const EditPizzaForm = ({
           className="bg-gray-700 border-gray-600 text-white text-sm"
           placeholder="URL da imagem"
         />
+        {formData.imagem_url && (
+          <img
+            src={formData.imagem_url}
+            alt="Preview"
+            className="w-24 h-24 object-cover rounded"
+          />
+        )}
       </div>
-      {/* ...restante do formulário... */}
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          checked={formData.ativo}
+          onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+          className="rounded"
+        />
+        <label className="text-white text-sm">Ativo</label>
+      </div>
       <div className="flex space-x-2">
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           onClick={() => onSave(formData)}
           className="bg-green-600 hover:bg-green-700"
+          disabled={uploading}
         >
           <Save className="mr-1" size={14} />
           Salvar
         </Button>
-        <Button 
-          size="sm" 
-          variant="outline" 
+        <Button
+          size="sm"
+          variant="outline"
           onClick={onCancel}
           className="border-gray-600"
         >
