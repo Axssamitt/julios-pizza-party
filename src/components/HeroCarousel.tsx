@@ -64,6 +64,8 @@ export const HeroCarousel = () => {
       plugins={[
         Autoplay({
           delay: 4000,
+          stopOnInteraction: false, // <-- garante autoplay mesmo após interação
+          stopOnMouseEnter: false,  // <-- não pausa ao passar mouse (desktop)
         }),
       ]}
     >
