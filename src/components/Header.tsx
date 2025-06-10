@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,13 +20,24 @@ export const Header = () => {
   const handleMenuClick = (href: string, type: string) => {
     setIsMenuOpen(false);
     if (type === 'anchor') {
-      // Para âncoras, use navegação suave
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+      // Se não estamos na página inicial, vamos para ela primeiro
+      if (window.location.pathname !== '/') {
+        navigate('/');
+        // Aguarda um pouco para a página carregar antes de fazer o scroll
+        setTimeout(() => {
+          const element = document.querySelector(href);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      } else {
+        // Se já estamos na página inicial, faz o scroll diretamente
+        const element = document.querySelector(href);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
       }
     } else if (type === 'route') {
-      // Para rotas, use navigate
       navigate(href);
     }
   };
