@@ -6,9 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { uploadImage } from '@/utils/supabaseStorage';
 
 interface Pizza {
   id: string;
@@ -18,6 +17,11 @@ interface Pizza {
   ativo: boolean;
   ordem: number;
   tipo: string;
+}
+
+interface ImagemSalva {
+  name: string;
+  url: string;
 }
 
 export const PizzaManager = () => {
@@ -31,10 +35,14 @@ export const PizzaManager = () => {
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imagensSalvas, setImagensSalvas] = useState<ImagemSalva[]>([]);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [editingImageField, setEditingImageField] = useState<'new' | string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPizzas();
+    fetchImagensSalvas();
   }, []);
 
   const fetchPizzas = async () => {
@@ -48,29 +56,53 @@ export const PizzaManager = () => {
     }
   };
 
-  const handleFileUpload = async (file: File, setImageUrlCallback?: (url: string) => void) => {
-    if (!file) return;
+  const fetchImagensSalvas = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('images')
+        .list('pizzas', { limit: 100 });
+
+      if (!error && data) {
+        const urls = data.map(file => ({
+          name: file.name,
+          url: `https://tsztjcrhlsurtfeqvinb.supabase.co/storage/v1/object/public/images/pizzas/${file.name}`
+        }));
+        setImagensSalvas(urls);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar imagens:', error);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file) return null;
 
     setUploading(true);
     try {
-      const imageUrl = await uploadImage(file, 'pizzas');
-      if (imageUrl) {
-        if (setImageUrlCallback) {
-          setImageUrlCallback(imageUrl);
-        } else {
-          setNewPizza(prev => ({ ...prev, imagem_url: imageUrl }));
-        }
-        toast({
-          title: "Sucesso",
-          description: "Imagem enviada com sucesso!",
+      const fileExt = file.name.split('.').pop();
+      const fileName = `pizzas/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
         });
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível obter a URL da imagem após o upload.",
-          variant: "destructive",
-        });
-      }
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('images')
+        .getPublicUrl(fileName);
+
+      fetchImagensSalvas(); // Atualizar lista de imagens
+      
+      toast({
+        title: "Sucesso",
+        description: "Imagem enviada com sucesso!",
+      });
+
+      return urlData.publicUrl;
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
       toast({
@@ -78,6 +110,7 @@ export const PizzaManager = () => {
         description: "Não foi possível fazer upload da imagem.",
         variant: "destructive",
       });
+      return null;
     } finally {
       setUploading(false);
     }
@@ -138,10 +171,24 @@ export const PizzaManager = () => {
     }
   };
 
+  const selectImage = (url: string) => {
+    if (editingImageField === 'new') {
+      setNewPizza({ ...newPizza, imagem_url: url });
+    } else if (editingImageField) {
+      // Para edição de pizza existente
+      const pizza = pizzas.find(p => p.id === editingImageField);
+      if (pizza) {
+        handleUpdate(editingImageField, { ...pizza, imagem_url: url });
+      }
+    }
+    setShowImageGallery(false);
+    setEditingImageField(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Gerenciar Pizzas</h2>
+        <h2 className="text-2xl font-bold text-white">Gerenciar Pizzas</h2>
         <Button 
           onClick={() => setShowAddForm(true)}
           className="bg-green-600 hover:bg-green-700"
@@ -173,30 +220,39 @@ export const PizzaManager = () => {
               <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-gray-700 border-gray-600">
                 <SelectItem value="salgada">Salgada</SelectItem>
                 <SelectItem value="doce">Doce</SelectItem>
               </SelectContent>
             </Select>
+            
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
+              <div className="flex gap-2">
                 <Input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
-                    if (file) handleFileUpload(file);
+                    if (file) {
+                      const url = await handleFileUpload(file);
+                      if (url) {
+                        setNewPizza({ ...newPizza, imagem_url: url });
+                      }
+                    }
                   }}
                   className="bg-gray-700 border-gray-600 text-white"
                   disabled={uploading}
                 />
                 <Button
                   type="button"
-                  disabled={uploading}
+                  onClick={() => {
+                    setEditingImageField('new');
+                    setShowImageGallery(true);
+                  }}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
-                  <Upload className="mr-2" size={16} />
-                  {uploading ? 'Enviando...' : 'Upload'}
+                  <Image className="mr-2" size={16} />
+                  Galeria
                 </Button>
               </div>
               <Input
@@ -206,6 +262,7 @@ export const PizzaManager = () => {
                 className="bg-gray-700 border-gray-600 text-white"
               />
             </div>
+            
             {newPizza.imagem_url && (
               <img 
                 src={newPizza.imagem_url} 
@@ -213,6 +270,7 @@ export const PizzaManager = () => {
                 className="w-32 h-32 object-cover rounded"
               />
             )}
+            
             <div className="flex space-x-2">
               <Button onClick={handleAdd} className="bg-green-600 hover:bg-green-700">
                 <Save className="mr-2" size={16} />
@@ -226,6 +284,43 @@ export const PizzaManager = () => {
                 <X className="mr-2" size={16} />
                 Cancelar
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Galeria de Imagens */}
+      {showImageGallery && (
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-white">Selecionar Imagem</CardTitle>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowImageGallery(false);
+                  setEditingImageField(null);
+                }}
+              >
+                <X size={16} />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto">
+              {imagensSalvas.map((imagem, index) => (
+                <div
+                  key={index}
+                  className="cursor-pointer hover:opacity-75 transition-opacity"
+                  onClick={() => selectImage(imagem.url)}
+                >
+                  <img
+                    src={imagem.url}
+                    alt={imagem.name}
+                    className="w-full h-20 object-cover rounded border-2 border-transparent hover:border-orange-500"
+                  />
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -255,6 +350,10 @@ export const PizzaManager = () => {
                   pizza={pizza} 
                   onSave={(updates) => handleUpdate(pizza.id, updates)}
                   onCancel={() => setEditingId(null)}
+                  onSelectImage={() => {
+                    setEditingImageField(pizza.id);
+                    setShowImageGallery(true);
+                  }}
                   uploadHandler={handleFileUpload}
                   uploading={uploading}
                 />
@@ -295,16 +394,17 @@ const EditPizzaForm = ({
   pizza,
   onSave,
   onCancel,
+  onSelectImage,
   uploadHandler,
   uploading
 }: {
   pizza: Pizza;
   onSave: (updates: Partial<Pizza>) => void;
   onCancel: () => void;
-  uploadHandler: (file: File, setImageUrlCallback: (url: string) => void) => Promise<void>;
+  onSelectImage: () => void;
+  uploadHandler: (file: File) => Promise<string | null>;
   uploading: boolean;
 }) => {
-  const { toast } = useToast(); // Added for error toasts in form
   const [formData, setFormData] = useState({
     nome: pizza.nome,
     ingredientes: pizza.ingredientes,
@@ -312,29 +412,6 @@ const EditPizzaForm = ({
     ativo: pizza.ativo,
     tipo: pizza.tipo || 'salgada'
   });
-
-  const handleFormImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Consider adding a form-specific uploading state if needed: setFormUploading(true);
-    try {
-      await uploadHandler(file, (newUrl) => {
-        setFormData(prev => ({ ...prev, imagem_url: newUrl }));
-      });
-      // Optional: toast for success from within the form
-      // toast({ title: "Sucesso", description: "Imagem do formulário atualizada." });
-    } catch (error) {
-      console.error("Error uploading image in form:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar a imagem no formulário.",
-        variant: "destructive",
-      });
-    } finally {
-      // Consider adding a form-specific uploading state if needed: setFormUploading(false);
-    }
-  };
 
   return (
     <div className="space-y-3">
@@ -353,28 +430,36 @@ const EditPizzaForm = ({
         <SelectTrigger className="bg-gray-700 border-gray-600 text-white text-sm">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-gray-700 border-gray-600">
           <SelectItem value="salgada">Salgada</SelectItem>
           <SelectItem value="doce">Doce</SelectItem>
         </SelectContent>
       </Select>
       <div className="space-y-2">
-        <div className="flex items-center space-x-2">
+        <div className="flex gap-2">
           <Input
             type="file"
             accept="image/*"
-            onChange={handleFormImageChange}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const url = await uploadHandler(file);
+                if (url) {
+                  setFormData({ ...formData, imagem_url: url });
+                }
+              }
+            }}
             className="bg-gray-700 border-gray-600 text-white text-sm"
-            disabled={uploading} // This 'uploading' is from PizzaManager's state
+            disabled={uploading}
           />
           <Button
             type="button"
-            disabled={uploading}
+            onClick={onSelectImage}
             size="sm"
             className="bg-blue-600 hover:bg-blue-700"
           >
-            <Upload className="mr-1" size={12} />
-            {uploading ? 'Enviando...' : 'Upload'}
+            <Image className="mr-1" size={12} />
+            Galeria
           </Button>
         </div>
         <Input

@@ -30,6 +30,7 @@ export const FormularioManager = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFormulario, setSelectedFormulario] = useState<FormularioContato | null>(null);
   const [showRecibo, setShowRecibo] = useState(false);
+  const [tipoDocumento, setTipoDocumento] = useState<'recibo' | 'contrato'>('recibo');
 
   useEffect(() => {
     fetchFormularios();
@@ -91,18 +92,20 @@ export const FormularioManager = () => {
     }
   };
 
-  // Agrupar por data do evento
-  const formulariosAgrupados = formularios.reduce((acc, formulario) => {
-    // Adicionar 'T00:00:00' para evitar problemas de fuso horário ao criar o objeto Date
-    const date = new Date(formulario.data_evento + 'T00:00:00');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const getMonthYear = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString('pt-BR', { month: 'long' });
     const year = date.getFullYear();
-    const groupKey = `${month}/${year}`;
+    return `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
+  };
 
-    if (!acc[groupKey]) {
-      acc[groupKey] = [];
+  // Agrupar por mês/ano
+  const formulariosAgrupados = formularios.reduce((acc, formulario) => {
+    const monthYear = getMonthYear(formulario.data_evento);
+    if (!acc[monthYear]) {
+      acc[monthYear] = [];
     }
-    acc[groupKey].push(formulario);
+    acc[monthYear].push(formulario);
     return acc;
   }, {} as Record<string, FormularioContato[]>);
 
@@ -140,18 +143,17 @@ export const FormularioManager = () => {
         <div className="space-y-8">
           {Object.entries(formulariosAgrupados)
             .sort(([keyA], [keyB]) => {
-              const [monthA, yearA] = keyA.split('/').map(Number);
-              const [monthB, yearB] = keyB.split('/').map(Number);
-              const dateA = new Date(yearA, monthA - 1); // Mês é 0-indexado no construtor Date
-              const dateB = new Date(yearB, monthB - 1);
-              return dateA.getTime() - dateB.getTime();
+              // Ordenar por data mais recente
+              const dateA = new Date(keyA);
+              const dateB = new Date(keyB);
+              return dateB.getTime() - dateA.getTime();
             })
             .map(([groupKey, formulariosDoMes]) => (
               <div key={groupKey} className="space-y-4">
                 <div className="flex items-center gap-2 text-white">
                   <Calendar className="h-5 w-5 text-orange-400" />
                   <h3 className="text-xl font-semibold">
-                    Eventos em {groupKey}
+                    {groupKey}
                   </h3>
                   <Badge variant="secondary" className="ml-2">
                     {formulariosDoMes.length} evento(s)
@@ -159,7 +161,9 @@ export const FormularioManager = () => {
                 </div>
                 
                 <div className="grid gap-4">
-                  {formulariosDoMes.map((formulario) => (
+                  {formulariosDoMes
+                    .sort((a, b) => new Date(a.data_evento).getTime() - new Date(b.data_evento).getTime())
+                    .map((formulario) => (
                     <Card key={formulario.id} className="bg-gray-800 border-gray-700">
                       <CardHeader>
                         <div className="flex justify-between items-start">
@@ -167,7 +171,9 @@ export const FormularioManager = () => {
                             <User className="h-5 w-5 text-orange-400" />
                             <div>
                               <CardTitle className="text-white">{formulario.nome_completo}</CardTitle>
-                              <p className="text-gray-400 text-sm">CPF: {formulario.cpf}</p>
+                              <p className="text-gray-400 text-sm">
+                                {formatDate(formulario.data_evento)} - CPF: {formulario.cpf}
+                              </p>
                             </div>
                           </div>
                           <Badge className={`${getStatusColor(formulario.status)} text-white`}>
@@ -220,13 +226,27 @@ export const FormularioManager = () => {
                           <Button
                             onClick={() => {
                               setSelectedFormulario(formulario);
+                              setTipoDocumento('recibo');
                               setShowRecibo(true);
                             }}
                             size="sm"
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             <FileText className="h-4 w-4 mr-1" />
-                            Ver Contrato
+                            Recibo
+                          </Button>
+                          
+                          <Button
+                            onClick={() => {
+                              setSelectedFormulario(formulario);
+                              setTipoDocumento('contrato');
+                              setShowRecibo(true);
+                            }}
+                            size="sm"
+                            className="bg-purple-600 hover:bg-purple-700"
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Contrato
                           </Button>
                           
                           <select
@@ -252,6 +272,7 @@ export const FormularioManager = () => {
       {showRecibo && selectedFormulario && (
         <ContratoRecibo
           formulario={selectedFormulario}
+          tipo={tipoDocumento}
           onClose={() => {
             setShowRecibo(false);
             setSelectedFormulario(null);

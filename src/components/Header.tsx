@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const menuItems = [
-    { label: 'INÍCIO', href: '#home' },
+    { label: 'INÍCIO', href: '/' },
     { label: 'SOBRE NÓS', href: '#about' },
     { label: 'CARDÁPIO', href: '/cardapio' },
     { label: 'INSTAGRAM', href: '#instagram' },
@@ -24,6 +25,9 @@ export const Header = () => {
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
+    } else if (href.startsWith('/')) {
+      // Para rotas, use navigate
+      navigate(href);
     }
   };
 
@@ -50,30 +54,17 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex space-x-8">
-            {menuItems.map((item) => {
-              if (item.href.startsWith('/')) {
-                return (
-                  <Link
-                    key={item.label}
-                    to={item.href}
-                    className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
-                      item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-1 rounded-md border border-orange-500/50' : ''
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => handleMenuClick(item.href)}
-                  className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium"
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+            {menuItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => handleMenuClick(item.href)}
+                className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
+                  item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-1 rounded-md border border-orange-500/50' : ''
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -91,31 +82,17 @@ export const Header = () => {
         {isMenuOpen && (
           <nav className="lg:hidden mt-4 pb-4 border-t border-gray-700 pt-4">
             <div className="flex flex-col space-y-3">
-              {menuItems.map((item) => {
-                if (item.href.startsWith('/')) {
-                  return (
-                    <Link
-                      key={item.label}
-                      to={item.href}
-                      className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
-                        item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50 text-center' : ''
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                }
-                return (
-                  <button
-                    key={item.label}
-                    onClick={() => handleMenuClick(item.href)}
-                    className="text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-left"
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
+              {menuItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => handleMenuClick(item.href)}
+                  className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-left ${
+                    item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50 text-center' : ''
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </nav>
         )}
