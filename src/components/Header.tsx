@@ -9,23 +9,23 @@ export const Header = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { label: 'INÍCIO', href: '/' },
-    { label: 'SOBRE NÓS', href: '#about' },
-    { label: 'CARDÁPIO', href: '/cardapio' },
-    { label: 'INSTAGRAM', href: '#instagram' },
-    { label: 'CONTATO', href: '#contact' },
-    { label: 'ADMIN', href: '/auth' }
+    { label: 'INÍCIO', href: '/', type: 'route' },
+    { label: 'SOBRE NÓS', href: '#about', type: 'anchor' },
+    { label: 'CARDÁPIO', href: '/cardapio', type: 'route' },
+    { label: 'INSTAGRAM', href: '#instagram', type: 'anchor' },
+    { label: 'CONTATO', href: '#contact', type: 'anchor' },
+    { label: 'ADMIN', href: '/auth', type: 'route' }
   ];
 
-  const handleMenuClick = (href: string) => {
+  const handleMenuClick = (href: string, type: string) => {
     setIsMenuOpen(false);
-    if (href.startsWith('#')) {
+    if (type === 'anchor') {
       // Para âncoras, use navegação suave
       const element = document.querySelector(href);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
-    } else if (href.startsWith('/')) {
+    } else if (type === 'route') {
       // Para rotas, use navigate
       navigate(href);
     }
@@ -37,9 +37,9 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-orange-500">
+            <div className="w-16 h-16 rounded-full overflow-hidden">
               <img 
-                src="https://storage.googleapis.com/wzukusers/user-34847409/images/5cf9a50e698b6eDiLZd7/logoo_d200.png" 
+                src="/lovable-uploads/b04f55da-ed47-4b77-bf34-8b7b23d12107.png" 
                 alt="Júlio's Pizza House Logo" 
                 className="w-full h-full object-cover"
               />
@@ -57,7 +57,7 @@ export const Header = () => {
             {menuItems.map((item) => (
               <button
                 key={item.label}
-                onClick={() => handleMenuClick(item.href)}
+                onClick={() => handleMenuClick(item.href, item.type)}
                 className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium ${
                   item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-1 rounded-md border border-orange-500/50' : ''
                 }`}
@@ -85,7 +85,7 @@ export const Header = () => {
               {menuItems.map((item) => (
                 <button
                   key={item.label}
-                  onClick={() => handleMenuClick(item.href)}
+                  onClick={() => handleMenuClick(item.href, item.type)}
                   className={`text-gray-300 hover:text-orange-400 transition-colors duration-200 font-medium text-left ${
                     item.label === 'ADMIN' ? 'bg-orange-500/20 px-3 py-2 rounded-md border border-orange-500/50 text-center' : ''
                   }`}

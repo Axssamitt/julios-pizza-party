@@ -42,16 +42,19 @@ export const Hero = () => {
   return (
     <section 
       id="home" 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900"
     >
       <div className="container mx-auto px-4 z-10">
         <div className="text-center text-white">
+          {/* Logo Principal */}
+          <div className="mb-8 flex justify-center">
+            <img 
+              src="/lovable-uploads/b04f55da-ed47-4b77-bf34-8b7b23d12107.png" 
+              alt="Júlio's Pizza House" 
+              className="w-48 h-48 md:w-64 md:h-64 object-cover"
+            />
+          </div>
+
           {config?.visivel_nome_empresa && config?.nome_empresa && (
             <p className="text-lg md:text-xl mb-4 text-orange-300">
               {config.nome_empresa}
