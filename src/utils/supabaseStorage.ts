@@ -1,6 +1,43 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import heic2any from "heic2any";
 
+// Função para converter qualquer imagem para JPG
+async function convertToJpg(file: File): Promise<File> {
+  // Se for HEIC, usa heic2any
+  if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+    const jpgBlob = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+    return new File([jpgBlob as BlobPart], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+  }
+
+  // Para outros formatos, usa canvas
+  return new Promise<File>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const img = new window.Image();
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject("Canvas não suportado");
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject("Falha ao converter para JPG");
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+          },
+          "image/jpeg",
+          0.9
+        );
+      };
+      img.onerror = reject;
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 // Função para criar buckets se não existirem
 export const initializeStorage = async () => {
   try {
@@ -35,16 +72,17 @@ export const initializeStorage = async () => {
 
 // Função para upload de imagem
 export const uploadImage = async (file: File, folder: string): Promise<string> => {
-  // Inicializar storage se necessário
   await initializeStorage();
-  
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+  // Converte para JPG antes do upload
+  const jpgFile = await convertToJpg(file);
+
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.jpg`;
   const filePath = `${folder}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from('images')
-    .upload(filePath, file);
+    .upload(filePath, jpgFile);
 
   if (uploadError) {
     throw uploadError;
