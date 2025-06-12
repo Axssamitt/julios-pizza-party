@@ -7,24 +7,25 @@ import { FileText, Download, Eye, Plus } from 'lucide-react';
 import { ContratoRecibo } from './ContratoRecibo';
 import jsPDF from 'jspdf';
 
-interface Contrato {
+interface Formulario {
   id: string;
-  formulario_id: string;
-  nome_cliente: string;
+  nome_completo: string;
+  cpf: string;
+  endereco: string;
+  endereco_evento: string;
   data_evento: string;
   horario: string;
-  endereco_evento: string;
   quantidade_adultos: number;
   quantidade_criancas: number;
-  valor_total: number;
+  telefone: string;
   observacoes: string | null;
   created_at: string;
-  tipo: 'contrato' | 'recibo';
+  status: string;
 }
 
 export const ContratoManager = () => {
-  const [contratos, setContratos] = useState<Contrato[]>([]);
-  const [selectedContrato, setSelectedContrato] = useState<Contrato | null>(null);
+  const [contratos, setContratos] = useState<Formulario[]>([]);
+  const [selectedContrato, setSelectedContrato] = useState<Formulario | null>(null);
   const [showContratoForm, setShowContratoForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -34,8 +35,9 @@ export const ContratoManager = () => {
 
   const fetchContratos = async () => {
     const { data, error } = await supabase
-      .from('contratos')
+      .from('formularios_contato')
       .select('*')
+      .eq('status', 'confirmado')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -43,31 +45,31 @@ export const ContratoManager = () => {
     }
   };
 
-  const downloadPDF = async (contrato: Contrato) => {
+  const downloadPDF = async (contrato: Formulario) => {
     setLoading(true);
     try {
       const pdf = new jsPDF();
       
       // Título
       pdf.setFontSize(20);
-      pdf.text(contrato.tipo === 'contrato' ? 'CONTRATO DE SERVIÇOS' : 'RECIBO', 20, 30);
+      pdf.text('CONTRATO DE SERVIÇOS', 20, 30);
       
       // Dados do cliente
       pdf.setFontSize(12);
-      pdf.text(`Cliente: ${contrato.nome_cliente}`, 20, 50);
-      pdf.text(`Data do Evento: ${new Date(contrato.data_evento).toLocaleDateString('pt-BR')}`, 20, 60);
-      pdf.text(`Horário: ${contrato.horario}`, 20, 70);
-      pdf.text(`Local: ${contrato.endereco_evento}`, 20, 80);
-      pdf.text(`Adultos: ${contrato.quantidade_adultos}`, 20, 90);
-      pdf.text(`Crianças: ${contrato.quantidade_criancas}`, 20, 100);
-      pdf.text(`Valor Total: R$ ${contrato.valor_total.toFixed(2)}`, 20, 110);
+      pdf.text(`Cliente: ${contrato.nome_completo}`, 20, 50);
+      pdf.text(`CPF: ${contrato.cpf}`, 20, 60);
+      pdf.text(`Data do Evento: ${new Date(contrato.data_evento).toLocaleDateString('pt-BR')}`, 20, 70);
+      pdf.text(`Horário: ${contrato.horario}`, 20, 80);
+      pdf.text(`Local: ${contrato.endereco_evento}`, 20, 90);
+      pdf.text(`Adultos: ${contrato.quantidade_adultos}`, 20, 100);
+      pdf.text(`Crianças: ${contrato.quantidade_criancas}`, 20, 110);
       
       if (contrato.observacoes) {
         pdf.text(`Observações: ${contrato.observacoes}`, 20, 120);
       }
       
       // Salvar o PDF
-      pdf.save(`${contrato.tipo}_${contrato.nome_cliente}_${contrato.id}.pdf`);
+      pdf.save(`contrato_${contrato.nome_completo}_${contrato.id}.pdf`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
     } finally {
@@ -95,13 +97,13 @@ export const ContratoManager = () => {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{contrato.nome_cliente}</h3>
+                    <h3 className="text-lg font-semibold text-white">{contrato.nome_completo}</h3>
                     <p className="text-gray-400 text-sm">
-                      {contrato.tipo === 'contrato' ? 'Contrato' : 'Recibo'} - {new Date(contrato.data_evento).toLocaleDateString('pt-BR')}
+                      Orçamento Confirmado - {new Date(contrato.data_evento).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                   <div className="text-orange-400 font-bold">
-                    R$ {contrato.valor_total.toFixed(2)}
+                    CPF: {contrato.cpf}
                   </div>
                 </div>
                 
@@ -140,13 +142,17 @@ export const ContratoManager = () => {
           <Card className="bg-gray-800 border-gray-700 sticky top-4">
             <CardHeader>
               <CardTitle className="text-orange-400">
-                {selectedContrato.tipo === 'contrato' ? 'Detalhes do Contrato' : 'Detalhes do Recibo'}
+                Detalhes do Contrato
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <label className="text-gray-400 text-sm">Cliente</label>
-                <p className="text-white">{selectedContrato.nome_cliente}</p>
+                <p className="text-white">{selectedContrato.nome_completo}</p>
+              </div>
+              <div>
+                <label className="text-gray-400 text-sm">CPF</label>
+                <p className="text-white">{selectedContrato.cpf}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -173,8 +179,8 @@ export const ContratoManager = () => {
                 </div>
               </div>
               <div>
-                <label className="text-gray-400 text-sm">Valor Total</label>
-                <p className="text-white font-bold text-lg">R$ {selectedContrato.valor_total.toFixed(2)}</p>
+                <label className="text-gray-400 text-sm">Telefone</label>
+                <p className="text-white">{selectedContrato.telefone}</p>
               </div>
               {selectedContrato.observacoes && (
                 <div>

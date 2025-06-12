@@ -65,26 +65,20 @@ export const ContratoRecibo = ({ onClose, onSave }: ContratoReciboProps) => {
     if (!formulario) return;
 
     try {
+      // Aqui você pode adicionar lógica para salvar informações adicionais
+      // Por enquanto, apenas atualizamos as observações do formulário
       const { error } = await supabase
-        .from('contratos')
-        .insert({
-          formulario_id: selectedFormulario,
-          nome_cliente: formulario.nome_completo,
-          data_evento: formulario.data_evento,
-          horario: formulario.horario,
-          endereco_evento: formulario.endereco_evento,
-          quantidade_adultos: formulario.quantidade_adultos,
-          quantidade_criancas: formulario.quantidade_criancas,
-          valor_total: parseFloat(valorTotal),
-          observacoes: observacoes || null,
-          tipo: tipo
-        });
+        .from('formularios_contato')
+        .update({
+          observacoes: `${tipo.toUpperCase()} - Valor: R$ ${valorTotal} - ${observacoes || ''}`
+        })
+        .eq('id', selectedFormulario);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: `${tipo === 'contrato' ? 'Contrato' : 'Recibo'} criado com sucesso!`,
+        description: `${tipo === 'contrato' ? 'Contrato' : 'Recibo'} processado com sucesso!`,
       });
 
       onSave();
