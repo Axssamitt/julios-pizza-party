@@ -31,7 +31,7 @@ const Auth = () => {
     console.log('Tentando fazer login com:', { email, password });
 
     try {
-      // Buscar usuário na tabela usuarios
+      // Buscar usuário na tabela usuarios incluindo o campo tipo
       const { data: usuarios, error: queryError } = await supabase
         .from('usuarios')
         .select('*')
@@ -54,11 +54,12 @@ const Auth = () => {
       const usuario = usuarios[0];
       console.log('Usuário encontrado:', usuario);
 
-      // Salvar dados do usuário no localStorage
+      // Salvar dados do usuário no localStorage incluindo o tipo
       const adminUserData = {
         id: usuario.id,
         email: usuario.email,
-        nome: usuario.nome
+        nome: usuario.nome,
+        tipo: usuario.tipo || 'restrito' // padrão para restrito se não definido
       };
 
       localStorage.setItem('admin_user', JSON.stringify(adminUserData));

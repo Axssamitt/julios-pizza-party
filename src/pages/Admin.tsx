@@ -3,14 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, FileText } from 'lucide-react';
+import { LogOut, Users, FileText, Shield } from 'lucide-react';
 import { FormularioManager } from '@/components/admin/FormularioManager';
 import { ContratoManager } from '@/components/admin/ContratoManager';
+import { UserManager } from '@/components/admin/UserManager';
 
 interface AdminUser {
   id: string;
   email: string;
   nome: string;
+  tipo?: string;
 }
 
 const Admin = () => {
@@ -42,6 +44,8 @@ const Admin = () => {
     navigate('/');
   };
 
+  const isRestrictedUser = adminUser?.tipo === 'restrito';
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -69,6 +73,9 @@ const Admin = () => {
             <div>
               <h1 className="text-xl font-bold">Sistema de Gerenciamento</h1>
               <p className="text-gray-400 text-sm">{adminUser.email}</p>
+              {isRestrictedUser && (
+                <p className="text-orange-400 text-xs">Acesso Restrito</p>
+              )}
             </div>
           </div>
           <Button 
@@ -84,7 +91,7 @@ const Admin = () => {
 
       <main className="container mx-auto p-6">
         <Tabs defaultValue="formularios" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 gap-1">
+          <TabsList className={`bg-gray-800 border-gray-700 ${isRestrictedUser ? 'grid grid-cols-2' : 'grid grid-cols-3'} gap-1`}>
             <TabsTrigger value="formularios" className="data-[state=active]:bg-orange-600">
               <Users className="mr-2" size={16} />
               Orçamentos
@@ -93,6 +100,12 @@ const Admin = () => {
               <FileText className="mr-2" size={16} />
               Contratos
             </TabsTrigger>
+            {!isRestrictedUser && (
+              <TabsTrigger value="usuarios" className="data-[state=active]:bg-orange-600">
+                <Shield className="mr-2" size={16} />
+                Usuários
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="formularios">
@@ -102,6 +115,12 @@ const Admin = () => {
           <TabsContent value="contratos">
             <ContratoManager />
           </TabsContent>
+
+          {!isRestrictedUser && (
+            <TabsContent value="usuarios">
+              <UserManager />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
