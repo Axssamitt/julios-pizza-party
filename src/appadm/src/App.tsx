@@ -8,7 +8,6 @@ import { useState, useEffect } from "react";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 

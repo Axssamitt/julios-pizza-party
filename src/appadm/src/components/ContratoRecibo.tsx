@@ -65,8 +65,7 @@ export const ContratoRecibo = ({ onClose, onSave }: ContratoReciboProps) => {
     if (!formulario) return;
 
     try {
-      // Aqui você pode adicionar lógica para salvar informações adicionais
-      // Por enquanto, apenas atualizamos as observações do formulário
+      // Atualizar as observações do formulário com informações do contrato/recibo
       const { error } = await supabase
         .from('formularios_contato')
         .update({

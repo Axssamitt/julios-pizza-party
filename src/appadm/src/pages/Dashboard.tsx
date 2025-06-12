@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -59,7 +60,7 @@ const Dashboard = () => {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Júlio's Pizza House - Painel Admin</h1>
+              <h1 className="text-xl font-bold">Gerenciador de Contratos - Júlio's Pizza House</h1>
               <p className="text-gray-400 text-sm">{adminUser.email}</p>
             </div>
           </div>

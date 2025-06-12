@@ -76,10 +76,10 @@ const Login = () => {
             />
           </div>
           <CardTitle className="text-2xl font-bold text-white">
-            Júlio's Pizza House
+            Gerenciador de Contratos
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Painel Administrativo - Orçamentos e Contratos
+            Júlio's Pizza House - Sistema de Orçamentos e Contratos
           </CardDescription>
         </CardHeader>
         <CardContent>
