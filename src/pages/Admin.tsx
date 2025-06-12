@@ -3,16 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, FileText, Shield } from 'lucide-react';
+import { LogOut, Pizza, Settings, FileText, Users, BarChart3, Home, Image, Instagram, Shield } from 'lucide-react';
+import { PizzaManager } from '@/components/admin/PizzaManager';
+import { ConfigManager } from '@/components/admin/ConfigManager';
 import { FormularioManager } from '@/components/admin/FormularioManager';
 import { ContratoManager } from '@/components/admin/ContratoManager';
+import { Dashboard } from '@/components/admin/Dashboard';
+import { HomeConfigManager } from '@/components/admin/HomeConfigManager';
+import { CarouselManager } from '@/components/admin/CarouselManager';
 import { UserManager } from '@/components/admin/UserManager';
+import { InstagramManager } from '@/components/admin/InstagramManager';
 
 interface AdminUser {
   id: string;
   email: string;
   nome: string;
-  tipo?: string;
 }
 
 const Admin = () => {
@@ -44,8 +49,6 @@ const Admin = () => {
     navigate('/');
   };
 
-  const isRestrictedUser = adminUser?.tipo === 'restrito';
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -71,11 +74,8 @@ const Admin = () => {
               />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Sistema de Gerenciamento</h1>
+              <h1 className="text-xl font-bold">Júlio's Pizza House - Admin</h1>
               <p className="text-gray-400 text-sm">{adminUser.email}</p>
-              {isRestrictedUser && (
-                <p className="text-orange-400 text-xs">Acesso Restrito</p>
-              )}
             </div>
           </div>
           <Button 
@@ -90,23 +90,69 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto p-6">
-        <Tabs defaultValue="formularios" className="space-y-6">
-          <TabsList className={`bg-gray-800 border-gray-700 ${isRestrictedUser ? 'grid grid-cols-2' : 'grid grid-cols-3'} gap-1`}>
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-4 lg:grid-cols-9 gap-1">
+            <TabsTrigger value="dashboard" className="data-[state=active]:bg-orange-600">
+              <BarChart3 className="mr-2" size={16} />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="home" className="data-[state=active]:bg-orange-600">
+              <Home className="mr-2" size={16} />
+              Home
+            </TabsTrigger>
+            <TabsTrigger value="carousel" className="data-[state=active]:bg-orange-600">
+              <Image className="mr-2" size={16} />
+              Carrossel
+            </TabsTrigger>
+            <TabsTrigger value="pizzas" className="data-[state=active]:bg-orange-600">
+              <Pizza className="mr-2" size={16} />
+              Pizzas
+            </TabsTrigger>
+            <TabsTrigger value="instagram" className="data-[state=active]:bg-orange-600">
+              <Instagram className="mr-2" size={16} />
+              Instagram
+            </TabsTrigger>
+            <TabsTrigger value="config" className="data-[state=active]:bg-orange-600">
+              <Settings className="mr-2" size={16} />
+              Config
+            </TabsTrigger>
             <TabsTrigger value="formularios" className="data-[state=active]:bg-orange-600">
               <Users className="mr-2" size={16} />
-              Orçamentos
+              Formulários
             </TabsTrigger>
             <TabsTrigger value="contratos" className="data-[state=active]:bg-orange-600">
               <FileText className="mr-2" size={16} />
               Contratos
             </TabsTrigger>
-            {!isRestrictedUser && (
-              <TabsTrigger value="usuarios" className="data-[state=active]:bg-orange-600">
-                <Shield className="mr-2" size={16} />
-                Usuários
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="usuarios" className="data-[state=active]:bg-orange-600">
+              <Shield className="mr-2" size={16} />
+              Usuários
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard">
+            <Dashboard />
+          </TabsContent>
+
+          <TabsContent value="home">
+            <HomeConfigManager />
+          </TabsContent>
+
+          <TabsContent value="carousel">
+            <CarouselManager />
+          </TabsContent>
+
+          <TabsContent value="pizzas">
+            <PizzaManager />
+          </TabsContent>
+
+          <TabsContent value="instagram">
+            <InstagramManager />
+          </TabsContent>
+
+          <TabsContent value="config">
+            <ConfigManager />
+          </TabsContent>
 
           <TabsContent value="formularios">
             <FormularioManager />
@@ -116,11 +162,9 @@ const Admin = () => {
             <ContratoManager />
           </TabsContent>
 
-          {!isRestrictedUser && (
-            <TabsContent value="usuarios">
-              <UserManager />
-            </TabsContent>
-          )}
+          <TabsContent value="usuarios">
+            <UserManager />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
