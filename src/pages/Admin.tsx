@@ -18,7 +18,20 @@ interface AdminUser {
   id: string;
   email: string;
   nome: string;
+  tipo?: string; // Adicionado tipo opcional para compatibilidade inicial
 }
+
+const allTabs = [
+  { value: "dashboard", label: "Dashboard", IconComponent: BarChart3 },
+  { value: "home", label: "Home", IconComponent: Home },
+  { value: "carousel", label: "Carrossel", IconComponent: Image },
+  { value: "pizzas", label: "Pizzas", IconComponent: Pizza },
+  { value: "instagram", label: "Instagram", IconComponent: Instagram },
+  { value: "config", label: "Config", IconComponent: Settings },
+  { value: "formularios", label: "Formulários", IconComponent: Users },
+  { value: "contratos", label: "Contratos", IconComponent: FileText },
+  { value: "usuarios", label: "Usuários", IconComponent: Shield },
+];
 
 const Admin = () => {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -61,6 +74,16 @@ const Admin = () => {
     return null;
   }
 
+  const userTipo = adminUser?.tipo;
+  const filteredTabs = userTipo === 'restrito'
+    ? allTabs.filter(tab => tab.value === 'formularios' || tab.value === 'contratos')
+    : allTabs;
+
+  const defaultTabValue = userTipo === 'restrito'
+    ? (filteredTabs.length > 0 ? filteredTabs[0].value : '') // Default to first available tab for restrito
+    : 'dashboard';
+
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="bg-gray-800 border-b border-gray-700 p-4">
@@ -90,44 +113,18 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto p-6">
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-4 lg:grid-cols-9 gap-1">
-            <TabsTrigger value="dashboard" className="data-[state=active]:bg-orange-600">
-              <BarChart3 className="mr-2" size={16} />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="home" className="data-[state=active]:bg-orange-600">
-              <Home className="mr-2" size={16} />
-              Home
-            </TabsTrigger>
-            <TabsTrigger value="carousel" className="data-[state=active]:bg-orange-600">
-              <Image className="mr-2" size={16} />
-              Carrossel
-            </TabsTrigger>
-            <TabsTrigger value="pizzas" className="data-[state=active]:bg-orange-600">
-              <Pizza className="mr-2" size={16} />
-              Pizzas
-            </TabsTrigger>
-            <TabsTrigger value="instagram" className="data-[state=active]:bg-orange-600">
-              <Instagram className="mr-2" size={16} />
-              Instagram
-            </TabsTrigger>
-            <TabsTrigger value="config" className="data-[state=active]:bg-orange-600">
-              <Settings className="mr-2" size={16} />
-              Config
-            </TabsTrigger>
-            <TabsTrigger value="formularios" className="data-[state=active]:bg-orange-600">
-              <Users className="mr-2" size={16} />
-              Formulários
-            </TabsTrigger>
-            <TabsTrigger value="contratos" className="data-[state=active]:bg-orange-600">
-              <FileText className="mr-2" size={16} />
-              Contratos
-            </TabsTrigger>
-            <TabsTrigger value="usuarios" className="data-[state=active]:bg-orange-600">
-              <Shield className="mr-2" size={16} />
-              Usuários
-            </TabsTrigger>
+        <Tabs defaultValue={defaultTabValue} className="space-y-6">
+          <TabsList className={`bg-gray-800 border-gray-700 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-${filteredTabs.length > 4 ? (filteredTabs.length > 6 ? 9 : 6) : filteredTabs.length} gap-1`}>
+            {filteredTabs.map(tab => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="data-[state=active]:bg-orange-600"
+              >
+                <tab.IconComponent className="mr-2" size={16} />
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="dashboard">
