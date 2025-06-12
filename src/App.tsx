@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HashRouter as Router } from "react-router-dom";
 
 // Components
-import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Index from "./pages/Index";
@@ -28,7 +27,11 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/cardapio" element={<Cardapio />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
