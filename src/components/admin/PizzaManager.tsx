@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -242,6 +243,7 @@ export const PizzaManager = () => {
                   pizza={pizza} 
                   onSave={(updates) => handleUpdate(pizza.id, updates)}
                   onCancel={() => setEditingId(null)}
+                  onImageUpload={handleFileUpload}
                   uploading={uploading}
                 />
               ) : (
@@ -303,9 +305,12 @@ const EditPizzaForm = ({
     if (!file) return;
     setUploading(true);
     try {
+      // Importação dinâmica para evitar problemas de dependência circular
+      const { uploadImage } = await import('@/utils/supabaseStorage');
       const imageUrl = await uploadImage(file, 'pizzas');
       setFormData((prev) => ({ ...prev, imagem_url: imageUrl }));
     } catch (error) {
+      // Aqui você pode exibir um toast de erro se quiser
       alert('Erro ao fazer upload da imagem');
     } finally {
       setUploading(false);
