@@ -114,56 +114,51 @@ const Admin = () => {
 
       <main className="container mx-auto p-6">
         <Tabs defaultValue={defaultTabValue} className="space-y-6">
-          <TabsList className={`bg-gray-800 border-gray-700 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-${filteredTabs.length > 4 ? (filteredTabs.length > 6 ? 9 : 6) : filteredTabs.length} gap-1`}>
-            {filteredTabs.map(tab => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="data-[state=active]:bg-orange-600"
-              >
-                <tab.IconComponent className="mr-2" size={16} />
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value="dashboard">
-            <Dashboard />
-          </TabsContent>
-
-          <TabsContent value="home">
-            <HomeConfigManager />
-          </TabsContent>
-
-          <TabsContent value="carousel">
-            <CarouselManager />
-          </TabsContent>
-
-          <TabsContent value="pizzas">
-            <PizzaManager />
-          </TabsContent>
-
-          <TabsContent value="instagram">
-            <InstagramManager />
-          </TabsContent>
-
-          <TabsContent value="config">
-            <ConfigManager />
-          </TabsContent>
-
-          <TabsContent value="formularios">
-            <FormularioManager />
-          </TabsContent>
-
-          <TabsContent value="contratos">
-            <ContratoManager />
-          </TabsContent>
-
-          <TabsContent value="usuarios">
-            <UserManager />
-          </TabsContent>
-        </Tabs>
-      </main>
+          <TabsList
+  className="bg-gray-800 border-gray-700 flex flex-wrap gap-1 mb-1 z-10"
+>
+  {filteredTabs.map(tab => (
+    <TabsTrigger
+      key={tab.value}
+      value={tab.value}
+      className="data-[state=active]:bg-orange-600 flex-1 min-w-[120px] sm:min-w-[140px]"
+    >
+      <tab.IconComponent className="mr-2" size={16} />
+      {tab.label}
+    </TabsTrigger>
+  ))}
+</TabsList>
+          <div className="pt-28 md:pt-0"> {/* <-- Adicione este wrapper */}
+      <TabsContent value="dashboard">
+        <Dashboard />
+      </TabsContent>
+      <TabsContent value="home">
+        <HomeConfigManager />
+      </TabsContent>
+      <TabsContent value="carousel">
+        <CarouselManager />
+      </TabsContent>
+      <TabsContent value="pizzas">
+        <PizzaManager />
+      </TabsContent>
+      <TabsContent value="instagram">
+        <InstagramManager />
+      </TabsContent>
+      <TabsContent value="config">
+        <ConfigManager />
+      </TabsContent>
+      <TabsContent value="formularios">
+        <FormularioManager />
+      </TabsContent>
+      <TabsContent value="contratos">
+        <ContratoManager />
+      </TabsContent>
+      <TabsContent value="usuarios">
+        <UserManager />
+      </TabsContent>
+    </div>
+  </Tabs>
+</main>
     </div>
   );
 };
