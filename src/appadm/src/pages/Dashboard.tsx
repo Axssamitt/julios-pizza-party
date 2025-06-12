@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, FileText } from 'lucide-react';
-import { FormularioManager } from '@/components/FormularioManager';
-import { ContratoManager } from '@/components/ContratoManager';
+import { FormularioManager } from '../components/FormularioManager';
+import { ContratoManager } from '../components/ContratoManager';
 
 interface AdminUser {
   id: string;
