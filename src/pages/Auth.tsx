@@ -34,7 +34,7 @@ const Auth = () => {
       // Buscar usuário na tabela usuarios
       const { data: usuarios, error: queryError } = await supabase
         .from('usuarios')
-        .select('*')
+        .select('*, tipo')
         .eq('email', email)
         .eq('senha', password)
         .eq('ativo', true);
@@ -58,7 +58,8 @@ const Auth = () => {
       const adminUserData = {
         id: usuario.id,
         email: usuario.email,
-        nome: usuario.nome
+        nome: usuario.nome,
+        tipo: usuario.tipo
       };
 
       localStorage.setItem('admin_user', JSON.stringify(adminUserData));
