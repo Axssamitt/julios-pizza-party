@@ -29,6 +29,10 @@ export const FormularioManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchDate, setSearchDate] = useState('');
 
+  // Estados para edição
+  const [editando, setEditando] = useState(false);
+  const [editData, setEditData] = useState<Formulario | null>(null);
+
   useEffect(() => {
     fetchFormularios();
   }, []);
@@ -64,6 +68,20 @@ export const FormularioManager = () => {
     if (!error) {
       fetchFormularios();
       setSelectedFormulario(null);
+    }
+  };
+
+  const salvarEdicao = async () => {
+    if (!editData) return;
+    const { id, ...dadosParaAtualizar } = editData;
+    const { error } = await supabase
+      .from('formularios_contato')
+      .update(dadosParaAtualizar)
+      .eq('id', id);
+    if (!error) {
+      setEditando(false);
+      setSelectedFormulario({ ...editData });
+      fetchFormularios();
     }
   };
 
@@ -186,7 +204,10 @@ export const FormularioManager = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => setSelectedFormulario(formulario)}
+                      onClick={() => {
+                        setSelectedFormulario(formulario);
+                        setEditando(false);
+                      }}
                       className="border-gray-600"
                     >
                       <Eye className="mr-1" size={14} />
@@ -211,66 +232,188 @@ export const FormularioManager = () => {
           <Card className="bg-gray-800 border-gray-700 sticky top-4">
             <CardHeader>
               <CardTitle className="text-orange-400">Detalhes do Formulário</CardTitle>
+              {!editando && (
+                <Button
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => {
+                    setEditando(true);
+                    setEditData(selectedFormulario);
+                  }}
+                >
+                  Editar Orçamento
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label className="text-gray-400 text-sm">Nome Completo</label>
-                <p className="text-white">{selectedFormulario.nome_completo}</p>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm">CPF</label>
-                <p className="text-white">{selectedFormulario.cpf}</p>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm">Endereço Residencial</label>
-                <p className="text-white">{selectedFormulario.endereco}</p>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm">Endereço do Evento</label>
-                <p className="text-white">{selectedFormulario.endereco_evento}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-400 text-sm">Data do Evento</label>
-                  <p className="text-white">{formatDate(selectedFormulario.data_evento)}</p>
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm">Horário</label>
-                  <p className="text-white">{formatTime(selectedFormulario.horario)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-400 text-sm">Adultos</label>
-                  <p className="text-white">{selectedFormulario.quantidade_adultos}</p>
-                </div>
-                <div>
-                  <label className="text-gray-400 text-sm">Crianças (5-9 anos)</label>
-                  <p className="text-white">{selectedFormulario.quantidade_criancas}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm">Telefone</label>
-                <p className="text-white">{selectedFormulario.telefone}</p>
-              </div>
-              {selectedFormulario.observacoes && (
-                <div>
-                  <label className="text-gray-400 text-sm">Observações</label>
-                  <p className="text-white">{selectedFormulario.observacoes}</p>
-                </div>
+              {editando && editData ? (
+                <>
+                  <div>
+                    <label className="text-gray-400 text-sm">Nome Completo</label>
+                    <input
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.nome_completo}
+                      onChange={e => setEditData({ ...editData, nome_completo: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">CPF</label>
+                    <input
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.cpf}
+                      onChange={e => setEditData({ ...editData, cpf: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Endereço Residencial</label>
+                    <input
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.endereco}
+                      onChange={e => setEditData({ ...editData, endereco: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Endereço do Evento</label>
+                    <input
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.endereco_evento}
+                      onChange={e => setEditData({ ...editData, endereco_evento: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-sm">Data do Evento</label>
+                      <input
+                        type="date"
+                        className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                        value={editData.data_evento}
+                        onChange={e => setEditData({ ...editData, data_evento: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-sm">Horário</label>
+                      <input
+                        type="time"
+                        className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                        value={editData.horario}
+                        onChange={e => setEditData({ ...editData, horario: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-sm">Adultos</label>
+                      <input
+                        type="number"
+                        className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                        value={editData.quantidade_adultos}
+                        onChange={e => setEditData({ ...editData, quantidade_adultos: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-sm">Crianças (5-9 anos)</label>
+                      <input
+                        type="number"
+                        className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                        value={editData.quantidade_criancas}
+                        onChange={e => setEditData({ ...editData, quantidade_criancas: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Telefone</label>
+                    <input
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.telefone}
+                      onChange={e => setEditData({ ...editData, telefone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Observações</label>
+                    <textarea
+                      className="w-full bg-gray-700 text-white rounded px-2 py-1"
+                      value={editData.observacoes || ''}
+                      onChange={e => setEditData({ ...editData, observacoes: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex space-x-2 mt-2">
+                    <Button size="sm" className="bg-green-600" onClick={salvarEdicao}>
+                      Salvar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditando(false);
+                        setEditData(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-gray-400 text-sm">Nome Completo</label>
+                    <p className="text-white">{selectedFormulario.nome_completo}</p>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">CPF</label>
+                    <p className="text-white">{selectedFormulario.cpf}</p>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Endereço Residencial</label>
+                    <p className="text-white">{selectedFormulario.endereco}</p>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Endereço do Evento</label>
+                    <p className="text-white">{selectedFormulario.endereco_evento}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-sm">Data do Evento</label>
+                      <p className="text-white">{formatDate(selectedFormulario.data_evento)}</p>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-sm">Horário</label>
+                      <p className="text-white">{formatTime(selectedFormulario.horario)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-sm">Adultos</label>
+                      <p className="text-white">{selectedFormulario.quantidade_adultos}</p>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-sm">Crianças (5-9 anos)</label>
+                      <p className="text-white">{selectedFormulario.quantidade_criancas}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Telefone</label>
+                    <p className="text-white">{selectedFormulario.telefone}</p>
+                  </div>
+                  {selectedFormulario.observacoes && (
+                    <div>
+                      <label className="text-gray-400 text-sm">Observações</label>
+                      <p className="text-white">{selectedFormulario.observacoes}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-gray-400 text-sm">Status</label>
+                    <p className="text-white">
+                      <Badge className={getStatusColor(selectedFormulario.status)}>
+                        {selectedFormulario.status}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-sm">Data de Criação</label>
+                    <p className="text-white">{formatDate(selectedFormulario.created_at)}</p>
+                  </div>
+                </>
               )}
-              <div>
-                <label className="text-gray-400 text-sm">Status</label>
-                <p className="text-white">
-                  <Badge className={getStatusColor(selectedFormulario.status)}>
-                    {selectedFormulario.status}
-                  </Badge>
-                </p>
-              </div>
-              <div>
-                <label className="text-gray-400 text-sm">Data de Criação</label>
-                <p className="text-white">{formatDate(selectedFormulario.created_at)}</p>
-              </div>
             </CardContent>
           </Card>
         )}
