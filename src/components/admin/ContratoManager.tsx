@@ -21,6 +21,7 @@ interface Formulario {
   observacoes: string | null;
   status: string;
   created_at: string;
+  valor_entrada?: number | null; // Adicionado para entrada editável
   itens_adicionais?: ItemAdicional[];
 }
 
@@ -44,12 +45,66 @@ export const ContratoManager = () => {
   const [configs, setConfigs] = useState<Record<string, string>>({});
   const [itensAdicionais, setItensAdicionais] = useState<ItemAdicional[]>([]);
   const [novoItem, setNovoItem] = useState<ItemAdicional>({ descricao: '', valor: 0, quantidade: 1 });
+  const [valorEntradaEditavel, setValorEntradaEditavel] = useState<number | string>('');
 
   useEffect(() => {
     fetchFormularios();
     fetchConfigs();
   }, []);
 
+  useEffect(() => {
+    if (selectedFormulario) {
+      // Usa os itensAdicionais do estado, pois eles são atualizados ao selecionar o formulário
+      const valorTotalCalculado = calcularValorTotal(selectedFormulario.quantidade_adultos, selectedFormulario.quantidade_criancas, itensAdicionais);
+      const entradaCalculada = calcularEntrada(valorTotalCalculado);
+
+      if (selectedFormulario.valor_entrada && selectedFormulario.valor_entrada > 0) {
+        setValorEntradaEditavel(selectedFormulario.valor_entrada.toFixed(2));
+      } else {
+        setValorEntradaEditavel(entradaCalculada.toFixed(2));
+      }
+    } else {
+      setValorEntradaEditavel('');
+    }
+  }, [selectedFormulario, configs, itensAdicionais]); // Adicionado itensAdicionais como dependência
+
+  const handleSalvarValorEntrada = async () => {
+    if (!selectedFormulario || valorEntradaEditavel === '') {
+      console.error("Formulário não selecionado ou valor de entrada vazio.");
+      // TODO: Adicionar feedback visual para o usuário (ex: toast)
+      return;
+    }
+
+    const novoValorEntrada = parseFloat(String(valorEntradaEditavel));
+    if (isNaN(novoValorEntrada)) {
+      console.error("Valor de entrada inválido.");
+      // TODO: Adicionar feedback visual para o usuário (ex: toast)
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('formularios_contato')
+      .update({ valor_entrada: novoValorEntrada })
+      .eq('id', selectedFormulario.id)
+      .select(); // .select() para obter os dados atualizados
+
+    if (error) {
+      console.error('Erro ao salvar valor da entrada:', error);
+      // TODO: Adicionar feedback visual para o usuário (ex: toast de erro)
+    } else {
+      console.log('Valor da entrada salvo com sucesso:', data);
+      // TODO: Adicionar feedback visual para o usuário (ex: toast de sucesso)
+      
+      // Atualiza o estado local para refletir a mudança imediatamente
+      setFormularios(prevFormularios => 
+        prevFormularios.map(f => 
+          f.id === selectedFormulario.id ? { ...f, valor_entrada: novoValorEntrada } : f
+        )
+      );
+      // Opcionalmente, atualizar também o selectedFormulario se ele for usado para exibir o valor em outro lugar diretamente
+      setSelectedFormulario(prev => prev ? { ...prev, valor_entrada: novoValorEntrada } : null);
+    }
+  };
   const fetchFormularios = async () => {
     const { data, error } = await supabase
       .from('formularios_contato')
@@ -113,7 +168,16 @@ export const ContratoManager = () => {
 
 const gerarContrato = (formulario: Formulario) => {
   const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-  const entrada = calcularEntrada(valorTotal);
+ 
+  let entrada: number;
+  if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+    entrada = formulario.valor_entrada;
+  } else {
+    // Se não houver valor_entrada definido ou for zero, calcula normalmente.
+    // itensAdicionais do estado global é o correto aqui, pois reflete a seleção atual para este formulário.
+    entrada = calcularEntrada(valorTotal); 
+  }
+  
   const restante = valorTotal - entrada;
   const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
   const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
@@ -186,7 +250,7 @@ Forma de pagamento:
 • Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
   (Depositar na Caixa Econômica - Ag: 1479 - Conta: 00028090-5)
 • Restante: R$ ${restante.toFixed(2).replace('.', ',')}
-  (A ser pago no dia do evento em dinheiro)
+  (A ser pago até o dia anterior ao evento)
 
 CANCELAMENTO
 
@@ -211,8 +275,17 @@ CPF: 034.988.389-03
 // ...existing code...
   const gerarRecibo = (formulario: Formulario) => {
   const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-  const entrada = calcularEntrada(valorTotal);
-  const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+  
+  let entradaRecibo: number;
+  if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+    entradaRecibo = formulario.valor_entrada;
+  } else {
+    // Se não houver valor_entrada definido ou for zero, calcula normalmente.
+    entradaRecibo = calcularEntrada(valorTotal);
+  }
+  
+  const percentualEntrada = parseFloat(configs.percentual_entrada || '40'); // Mantém para exibição, mesmo que a entrada seja manual
+  
   
   const recibo = `
 JULIO'S PIZZA HOUSE
@@ -224,8 +297,8 @@ Recebemos de: ${formulario.nome_completo}
 CPF: ${formulario.cpf}
 Endereço: ${formulario.endereco}
 
-A importância de: R$ ${entrada.toFixed(2).replace('.', ',')}
-(${numberToWordsBrazilian(entrada)})
+A importância de: R$ ${entradaRecibo.toFixed(2).replace('.', ',')}
+(${numberToWordsBrazilian(entradaRecibo)})
 
 REFERENTE A:
 Entrada para contratação de serviço de rodízio de pizza
@@ -238,9 +311,9 @@ DETALHES DO EVENTO:
 
 RESUMO FINANCEIRO:
 • Valor total do serviço: R$ ${valorTotal.toFixed(2).replace('.', ',')}
-• Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
-• Saldo restante: R$ ${(valorTotal - entrada).toFixed(2).replace('.', ',')}
-  (a ser pago no dia do evento)
+• Entrada (${percentualEntrada}%): R$ ${entradaRecibo.toFixed(2).replace('.', ',')}
+• Saldo restante: R$ ${(valorTotal - entradaRecibo).toFixed(2).replace('.', ',')}
+  (a ser pago até o dia anterior ao evento)
 
 Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
 
@@ -359,7 +432,31 @@ const downloadPDF = (content: string, filename: string) => {
                   </div>
                 )}
                 
-                <div className="flex space-x-2">
+                {/* Campo de Valor de Entrada Editável */}
+                {selectedFormulario?.id === formulario.id && (
+                  <div className="mt-4 space-y-2">
+                    <label htmlFor="valorEntrada" className="text-sm font-medium text-white">
+                      Valor da Entrada (R$)
+                    </label>
+                    <Input
+                      id="valorEntrada"
+                      type="number"
+                      placeholder="Valor da Entrada"
+                      value={valorEntradaEditavel}
+                      onChange={(e) => setValorEntradaEditavel(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <Button
+                      onClick={handleSalvarValorEntrada}
+                      className="bg-blue-600 hover:bg-blue-700 text-white mt-2" // Adicionado mt-2 para espaço
+                      size="sm"
+                    >
+                      Salvar Entrada
+                    </Button>
+                  </div>
+                )}
+                
+                <div className="flex space-x-2 mt-4"> {/* Adicionado mt-4 para separar dos campos acima */}
                   <Button 
                     size="sm" 
                     onClick={() => {
