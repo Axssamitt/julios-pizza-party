@@ -95,7 +95,30 @@ export const FormularioManager = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+    if (!dateStr) return ''; // Handle null or undefined dateStr
+
+    // Split the date string by typical delimiters to get parts.
+    // This handles 'YYYY-MM-DD' and also basic ISO string dates like 'YYYY-MM-DDTHH:mm:ssZ'
+    const parts = dateStr.split(/[-T:]/); 
+    if (parts.length < 3) return 'Data inválida'; // Basic validation
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JavaScript Date
+    const day = parseInt(parts[2], 10);
+
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return 'Data inválida';
+
+
+    // Create a UTC date to avoid local timezone shifts influencing the date parts
+    const utcDate = new Date(Date.UTC(year, month, day));
+
+    // Format it using toLocaleDateString, specifying UTC to keep the date parts as they are.
+    return utcDate.toLocaleDateString('pt-BR', {
+      timeZone: 'UTC', // Critically important to format based on UTC date parts
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   };
 
   const formatTime = (timeStr: string) => {
@@ -420,4 +443,4 @@ export const FormularioManager = () => {
       </div>
     </div>
   );
-};
+};  
