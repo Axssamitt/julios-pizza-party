@@ -238,7 +238,7 @@ A CONTRATADA se compromete a:
 • Preparar quantidade suficiente para até 10% a mais
 
 OBSERVAÇÃO: Excedente de horário será cobrado R$ 300,00 a cada meia hora ultrapassada.
-
+\f
 VALORES E FORMA DE PAGAMENTO
 
 Valor por pessoa:
@@ -328,7 +328,7 @@ Júlio's Pizza House
 };
 
 
-const downloadPDF = (content: string, filename: string) => {
+const printPDF = (content: string, filename: string) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -343,12 +343,20 @@ const downloadPDF = (content: string, filename: string) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const usableWidth = pageWidth - marginLeft - marginRight;
 
-  doc.text(content, marginLeft, 20, {
-    maxWidth: usableWidth,
-    align: 'left'
+  const sections = content.split('\f');
+
+  sections.forEach((section, index) => {
+    doc.text(section, marginLeft, 20, {
+      maxWidth: usableWidth,
+      align: 'left'
+    });
+
+    if (index < sections.length - 1) {
+      doc.addPage();
+    }
   });
 
-  doc.save(filename);
+  doc.output('dataurlnewwindow');
 };
 
   return (
@@ -509,14 +517,14 @@ const downloadPDF = (content: string, filename: string) => {
                 </CardTitle>
                 <Button 
                   size="sm"
-                  onClick={() => downloadPDF(
+                  onClick={() => printPDF(
                     contratoGerado || reciboGerado,
                     `${contratoGerado ? 'contrato' : 'recibo'}_${selectedFormulario?.nome_completo.replace(/\s+/g, '_')}.pdf`
                   )}
                   className="bg-orange-600 hover:bg-orange-700"
                 >
                   <Download className="mr-1" size={14} />
-                  Download PDF
+                  Imprimir PDF
                 </Button>
               </div>
             </CardHeader>
