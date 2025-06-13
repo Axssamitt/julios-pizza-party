@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FileText, Download, Plus, Trash2 } from 'lucide-react';
 import { numberToWordsBrazilian } from '@/utils/supabaseStorage';
 import { jsPDF } from 'jspdf';
+import html2pdf from "html2pdf.js";
 
 interface Formulario {
   id: string;
