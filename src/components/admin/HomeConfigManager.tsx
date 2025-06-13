@@ -13,6 +13,8 @@ interface HomeConfig {
   id: string;
   titulo_hero: string;
   subtitulo_hero: string;
+  align_titulo_hero?: string;
+  align_subtitulo_hero?: string;
   texto_sobre: string;
   visivel_sobre: boolean;
   nome_empresa: string;
@@ -33,7 +35,9 @@ export const HomeConfigManager = () => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     titulo_hero: 'As Melhores Pizzas de Londrina',
+    align_titulo_hero: 'left',
     subtitulo_hero: 'Sabor autêntico que vai até você. Pizzas artesanais feitas com ingredientes frescos e muito amor.',
+    align_subtitulo_hero: 'left',
     texto_sobre: `Julios Pizzas House iniciou suas atividades em 2018 e hoje é uma referência no rodízio de pizzas fazendo a melhor pizza de Londrina Pr. Buscando sempre manter um alto padrão de qualidade visando sempre à satisfação dos nossos clientes.
 
 Todo o processo é rigorosamente acompanhado por mim Julio e minha Equipe, garantindo um atendimento com alto padrão de qualidade.
@@ -77,7 +81,9 @@ Faça o seu rodízio de pizzas sem sair do conforto de sua casa com Julio House 
         setConfig(data);
         setFormData({
           titulo_hero: data.titulo_hero || formData.titulo_hero,
+          align_titulo_hero: data.align_titulo_hero || 'left',
           subtitulo_hero: data.subtitulo_hero || formData.subtitulo_hero,
+          align_subtitulo_hero: data.align_subtitulo_hero || 'left',
           texto_sobre: data.texto_sobre || formData.texto_sobre,
           visivel_sobre: data.visivel_sobre !== false,
           nome_empresa: data.nome_empresa || formData.nome_empresa,
@@ -188,6 +194,19 @@ Faça o seu rodízio de pizzas sem sair do conforto de sua casa com Julio House 
               />
             </div>
             <div>
+              <Label htmlFor="align_titulo_hero" className="text-gray-300 mt-2">Alinhamento do Título</Label>
+              <select
+                id="align_titulo_hero"
+                value={formData.align_titulo_hero}
+                onChange={(e) => setFormData(prev => ({ ...prev, align_titulo_hero: e.target.value }))}
+                className="bg-gray-700 border-gray-600 text-white w-full p-2 rounded mt-1"
+              >
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+              </select>
+            </div>
+            <div className="mt-4">
               <Label htmlFor="subtitulo_hero" className="text-gray-300">Subtítulo</Label>
               <Textarea
                 id="subtitulo_hero"
@@ -198,6 +217,19 @@ Faça o seu rodízio de pizzas sem sair do conforto de sua casa com Julio House 
                 rows={3}
                 className="bg-gray-700 border-gray-600 text-white"
               />
+            </div>
+            <div>
+              <Label htmlFor="align_subtitulo_hero" className="text-gray-300 mt-2">Alinhamento do Subtítulo</Label>
+              <select
+                id="align_subtitulo_hero"
+                value={formData.align_subtitulo_hero}
+                onChange={(e) => setFormData(prev => ({ ...prev, align_subtitulo_hero: e.target.value }))}
+                className="bg-gray-700 border-gray-600 text-white w-full p-2 rounded mt-1"
+              >
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+              </select>
             </div>
           </form>
         </CardContent>
