@@ -194,10 +194,15 @@ O contrato pode ser rescindido por qualquer parte com comunicação formal até 
 
 LONDRINA, ${new Date().toLocaleDateString('pt-BR')}
 
-_________________________________    _________________________________
-        CONTRATANTE                           CONTRATADA
-    ${formulario.nome_completo}              Júlio Cesar Fermino
-      CPF: ${formulario.cpf}                 CPF: 034.988.389-03
+_________________________________
+CONTRATANTE
+${formulario.nome_completo}
+CPF: ${formulario.cpf}
+
+_________________________________
+CONTRATADA
+Júlio Cesar Fermino
+CPF: 034.988.389-03
 `;
 
   setContratoGerado(contrato);
@@ -266,7 +271,7 @@ const downloadPDF = (content: string, filename: string) => {
 
   doc.text(content, marginLeft, 20, {
     maxWidth: usableWidth,
-    align: 'justify'
+    align: 'left'
   });
 
   doc.save(filename);

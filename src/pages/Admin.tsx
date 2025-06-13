@@ -128,7 +128,8 @@ const Admin = () => {
     </TabsTrigger>
   ))}
 </TabsList>
-          <div className="pt-28 md:pt-0"> {/* <-- Adicione este wrapper */}
+          <div className={userTipo === 'restrito'?'pt-4 md:pt-0':'pt-28 md:pt-0'}> 
+            {/* conteudo das tabs */}
       <TabsContent value="dashboard">
         <Dashboard />
       </TabsContent>
@@ -156,7 +157,7 @@ const Admin = () => {
       <TabsContent value="usuarios">
         <UserManager />
       </TabsContent>
-    </div>
+      </div>
   </Tabs>
 </main>
     </div>
