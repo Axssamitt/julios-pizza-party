@@ -1,135 +1,80 @@
 
 import React, { useState, useEffect } from 'react';
+import { MapPin, Utensils } from 'lucide-react';
 import { HeroCarousel } from './HeroCarousel';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HomeConfig {
   titulo_hero: string;
   subtitulo_hero: string;
-  nome_empresa: string | null;
-  endereco: string | null;
-  telefone: string | null;
-  facebook_url: string | null;
-  instagram_url: string | null;
-  visivel_nome_empresa: boolean | null;
-  visivel_endereco: boolean | null;
-  visivel_telefone: boolean | null;
-  visivel_facebook: boolean | null;
-  visivel_instagram: boolean | null;
+  align_titulo_hero?: string;
+  align_subtitulo_hero?: string;
 }
 
 export const Hero = () => {
-  const [config, setConfig] = useState<HomeConfig | null>(null);
+  const [config, setConfig] = useState<HomeConfig>({
+    titulo_hero: 'As Melhores Pizzas de Londrina',
+    subtitulo_hero: 'Sabor autêntico para seus eventos. Buffet de pizzas artesanais feitas com ingredientes frescos e muito amor.',
+    align_titulo_hero: 'left',
+    align_subtitulo_hero: 'left'
+  });
 
   useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('home_config')
+          .select('titulo_hero, subtitulo_hero, align_titulo_hero, align_subtitulo_hero')
+          .limit(1)
+          .single();
+        
+        if (data) {
+          setConfig(data as HomeConfig);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações da home:', error);
+      }
+    };
+
     fetchConfig();
   }, []);
 
-  const fetchConfig = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('home_config')
-        .select('*')
-        .single();
-
-      if (error) throw error;
-      setConfig(data);
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
-    }
-  };
-
   return (
-    <section 
-      id="home" 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
-      <div className="container mx-auto px-4 z-10">
-        <div className="text-center text-white">
-          {config?.visivel_nome_empresa && config?.nome_empresa && (
-            <p className="text-lg md:text-xl mb-4 text-orange-300">
-              {config.nome_empresa}
+    <section id="home" className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col lg:flex-row items-center gap-12">
+          {/* Content */}
+          <div className="flex-1 text-center lg:text-left">
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ textAlign: config.align_titulo_hero as React.CSSProperties['textAlign'] }}>
+              <span className="bg-gradient-to-r from-orange-400 via-red-500 to-orange-600 bg-clip-text text-transparent" style={{ whiteSpace: 'pre-line' }}>
+                {config.titulo_hero}
+              </span>
+            </h2>
+            <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl" style={{ whiteSpace: 'pre-line', textAlign: config.align_subtitulo_hero as React.CSSProperties['textAlign'] }}>
+              {config.subtitulo_hero}
             </p>
-          )}
-          
-          <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              {config?.titulo_hero || 'As Melhores Pizzas de Londrina'}
-            </span>
-          </h1>
-          
-          <p className="text-lg md:text-2xl mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed">
-            {config?.subtitulo_hero || 'Sabor autêntico que vai até você. Pizzas artesanais feitas com ingredientes frescos e muito amor.'}
-          </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            {config?.visivel_endereco && config?.endereco && (
-              <div className="flex items-center gap-2 text-gray-300">
-                <span>📍</span>
-                <span>{config.endereco}</span>
+            {/* Info Cards - apenas localização e tipo de serviço */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-center lg:justify-start space-x-3 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <MapPin className="text-orange-400" size={24} />
+                <span className="text-gray-300">Londrina-PR</span>
               </div>
-            )}
-            
-            {config?.visivel_telefone && config?.telefone && (
-              <div className="flex items-center gap-2 text-gray-300">
-                <span>📞</span>
-                <a href={`tel:${config.telefone}`} className="hover:text-orange-400 transition-colors">
-                  {config.telefone}
-                </a>
+              <div className="flex items-center justify-center lg:justify-start space-x-3 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <Utensils className="text-orange-400" size={24} />
+                <span className="text-gray-300">Buffet para Eventos</span>
               </div>
-            )}
+            </div>
           </div>
 
-          <div className="flex justify-center gap-6">
-            {config?.visivel_facebook && config?.facebook_url && (
-              <a 
-                href={config.facebook_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white hover:text-orange-400 transition-colors text-2xl"
-                aria-label="Facebook"
-              >
-                📘
-              </a>
-            )}
-            
-            {config?.visivel_instagram && config?.instagram_url && (
-              <a 
-                href={config.instagram_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white hover:text-orange-400 transition-colors text-2xl"
-                aria-label="Instagram"
-              >
-                📷
-              </a>
-            )}
-          </div>
-          
-          <div className="mt-12">
-            <a 
-              href="#pizzas" 
-              className="inline-block bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:from-orange-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-2xl"
-            >
-              Ver Cardápio
-            </a>
+          {/* Hero Carousel */}
+          <div className="flex-1 relative">
+            <div className="relative w-full max-w-md mx-auto lg:max-w-full">
+              <HeroCarousel />
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
-        </div>
-      </div>
-
-      <HeroCarousel />
     </section>
   );
 };

@@ -21,6 +21,7 @@ interface Formulario {
   observacoes: string | null;
   status: string;
   created_at: string;
+  valor_entrada?: number | null;
   itens_adicionais?: ItemAdicional[];
 }
 
@@ -44,11 +45,59 @@ export const ContratoManager = () => {
   const [configs, setConfigs] = useState<Record<string, string>>({});
   const [itensAdicionais, setItensAdicionais] = useState<ItemAdicional[]>([]);
   const [novoItem, setNovoItem] = useState<ItemAdicional>({ descricao: '', valor: 0, quantidade: 1 });
+  const [valorEntradaEditavel, setValorEntradaEditavel] = useState<number | string>('');
 
   useEffect(() => {
     fetchFormularios();
     fetchConfigs();
   }, []);
+
+  useEffect(() => {
+    if (selectedFormulario) {
+      const valorTotalCalculado = calcularValorTotal(selectedFormulario.quantidade_adultos, selectedFormulario.quantidade_criancas, itensAdicionais);
+      const entradaCalculada = calcularEntrada(valorTotalCalculado);
+
+      if (selectedFormulario.valor_entrada && selectedFormulario.valor_entrada > 0) {
+        setValorEntradaEditavel(selectedFormulario.valor_entrada.toFixed(2));
+      } else {
+        setValorEntradaEditavel(entradaCalculada.toFixed(2));
+      }
+    } else {
+      setValorEntradaEditavel('');
+    }
+  }, [selectedFormulario, configs, itensAdicionais]);
+
+  const handleSalvarValorEntrada = async () => {
+    if (!selectedFormulario || valorEntradaEditavel === '') {
+      console.error("Formulário não selecionado ou valor de entrada vazio.");
+      return;
+    }
+
+    const novoValorEntrada = parseFloat(String(valorEntradaEditavel));
+    if (isNaN(novoValorEntrada)) {
+      console.error("Valor de entrada inválido.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('formularios_contato')
+      .update({ valor_entrada: novoValorEntrada })
+      .eq('id', selectedFormulario.id)
+      .select();
+
+    if (error) {
+      console.error('Erro ao salvar valor da entrada:', error);
+    } else {
+      console.log('Valor da entrada salvo com sucesso:', data);
+      
+      setFormularios(prevFormularios => 
+        prevFormularios.map(f => 
+          f.id === selectedFormulario.id ? { ...f, valor_entrada: novoValorEntrada } : f
+        )
+      );
+      setSelectedFormulario(prev => prev ? { ...prev, valor_entrada: novoValorEntrada } : null);
+    }
+  };
 
   const fetchFormularios = async () => {
     const { data, error } = await supabase
@@ -78,7 +127,21 @@ export const ContratoManager = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-BR');
+    if (!dateStr) return '';
+
+    const parts = dateStr.split(/[-T:]/);
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+
+    const utcDate = new Date(Date.UTC(year, month, day));
+
+    return utcDate.toLocaleDateString('pt-BR', {
+      timeZone: 'UTC',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
   };
 
   const formatTime = (timeStr: string) => {
@@ -111,7 +174,14 @@ export const ContratoManager = () => {
 
   const gerarContrato = (formulario: Formulario) => {
     const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-    const entrada = calcularEntrada(valorTotal);
+   
+    let entrada: number;
+    if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+      entrada = formulario.valor_entrada;
+    } else {
+      entrada = calcularEntrada(valorTotal); 
+    }
+    
     const restante = valorTotal - entrada;
     const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
     const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
@@ -119,16 +189,15 @@ export const ContratoManager = () => {
     
     let itensTexto = '';
     if (itensAdicionais.length > 0) {
-      itensTexto = '\n\nITENS ADICIONAIS:\n';
+      itensTexto = '\nITENS ADICIONAIS:\n';
       itensAdicionais.forEach(item => {
         itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
       });
     }
     
-    const contrato = `══════════════════════════════════════════════════════════
-                     JULIO'S PIZZA HOUSE
-                    CONTRATO DE PRESTAÇÃO DE SERVIÇOS
-══════════════════════════════════════════════════════════
+    const contrato = `
+JULIO'S PIZZA HOUSE
+CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
 CONTRATANTE: ${formulario.nome_completo.toUpperCase()}
 CPF: ${formulario.cpf}
@@ -141,18 +210,13 @@ Londrina - Paraná
 CPF: 034.988.389-03
 Responsável: Sr. Júlio Cesar Fermino
 
-──────────────────────────────────────────────────────────
-
 OBJETO DO CONTRATO
 
-O presente contrato tem por objeto a prestação de serviços 
-de rodízio de pizza para evento que se realizará em:
+O presente contrato tem por objeto a prestação de serviços de rodízio de pizza para evento que se realizará em:
 
 Data: ${formatDate(formulario.data_evento)}
 Horário: ${formatTime(formulario.horario)} às ${String(parseInt(formulario.horario.split(':')[0]) + 3).padStart(2, '0')}:${formulario.horario.split(':')[1]}
 Local: ${formulario.endereco_evento.toUpperCase()}
-
-──────────────────────────────────────────────────────────
 
 DETALHES DO EVENTO
 
@@ -161,16 +225,12 @@ Número de pessoas confirmadas:
 • Crianças (5-9 anos): ${formulario.quantidade_criancas} pessoas
 • Total: ${formulario.quantidade_adultos + formulario.quantidade_criancas} pessoas${itensTexto}
 
-──────────────────────────────────────────────────────────
-
 OBRIGAÇÕES DA CONTRATANTE
 
 A CONTRATANTE deverá:
 • Fornecer todas as informações necessárias
 • Efetuar o pagamento conforme estabelecido
 • Disponibilizar local ventilado e tomada 220V
-
-──────────────────────────────────────────────────────────
 
 OBRIGAÇÕES DA CONTRATADA
 
@@ -180,11 +240,8 @@ A CONTRATADA se compromete a:
 • Manter funcionários uniformizados
 • Preparar quantidade suficiente para até 10% a mais
 
-OBSERVAÇÃO: Excedente de horário será cobrado 
-R$ 300,00 a cada meia hora ultrapassada.
-
-──────────────────────────────────────────────────────────
-
+OBSERVAÇÃO: Excedente de horário será cobrado R$ 300,00 a cada meia hora ultrapassada.
+\f
 VALORES E FORMA DE PAGAMENTO
 
 Valor por pessoa:
@@ -197,42 +254,43 @@ Forma de pagamento:
 • Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
   (Depositar na Caixa Econômica - Ag: 1479 - Conta: 00028090-5)
 • Restante: R$ ${restante.toFixed(2).replace('.', ',')}
-  (A ser pago no dia do evento em dinheiro)
-
-──────────────────────────────────────────────────────────
+  (A ser pago até o dia anterior ao evento)
 
 CANCELAMENTO
 
-O contrato pode ser rescindido por qualquer parte com 
-comunicação formal até 10 dias antes do evento, com 
-devolução da entrada. Cancelamento após pagamento da 
-entrada: valor será creditado para futura contratação 
-em até 30 dias.
-
-──────────────────────────────────────────────────────────
+O contrato pode ser rescindido por qualquer parte com comunicação formal até 10 dias antes do evento, com devolução da entrada. Cancelamento após pagamento da entrada: valor será creditado para futura contratação em até 30 dias.
 
 LONDRINA, ${new Date().toLocaleDateString('pt-BR')}
 
+_________________________________
+CONTRATANTE
+${formulario.nome_completo}
+CPF: ${formulario.cpf}
 
-_________________________________    _________________________________
-        CONTRATANTE                           CONTRATADA
-    ${formulario.nome_completo}              Júlio Cesar Fermino
-      CPF: ${formulario.cpf}                 CPF: 034.988.389-03
-
-══════════════════════════════════════════════════════════`;
+_________________________________
+CONTRATADA
+Júlio Cesar Fermino
+CPF: 034.988.389-03
+`;
 
     setContratoGerado(contrato);
   };
 
   const gerarRecibo = (formulario: Formulario) => {
     const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-    const entrada = calcularEntrada(valorTotal);
+    
+    let entradaRecibo: number;
+    if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+      entradaRecibo = formulario.valor_entrada;
+    } else {
+      entradaRecibo = calcularEntrada(valorTotal);
+    }
+    
     const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
     
-    const recibo = `══════════════════════════════════════════════════════════
-                     JULIO'S PIZZA HOUSE
-                        RECIBO DE ENTRADA
-══════════════════════════════════════════════════════════
+    const recibo = `
+JULIO'S PIZZA HOUSE
+RECIBO DE ENTRADA
 
 RECIBO Nº: ${formulario.id.substring(0, 8).toUpperCase()}
 
@@ -240,10 +298,8 @@ Recebemos de: ${formulario.nome_completo}
 CPF: ${formulario.cpf}
 Endereço: ${formulario.endereco}
 
-A importância de: R$ ${entrada.toFixed(2).replace('.', ',')}
-(${numberToWordsBrazilian(entrada)})
-
-──────────────────────────────────────────────────────────
+A importância de: R$ ${entradaRecibo.toFixed(2).replace('.', ',')}
+(${numberToWordsBrazilian(entradaRecibo)})
 
 REFERENTE A:
 Entrada para contratação de serviço de rodízio de pizza
@@ -254,15 +310,11 @@ DETALHES DO EVENTO:
 • Local: ${formulario.endereco_evento}
 • Pessoas: ${formulario.quantidade_adultos} adultos${formulario.quantidade_criancas > 0 ? ` e ${formulario.quantidade_criancas} crianças` : ''}
 
-──────────────────────────────────────────────────────────
-
 RESUMO FINANCEIRO:
 • Valor total do serviço: R$ ${valorTotal.toFixed(2).replace('.', ',')}
-• Entrada (${percentualEntrada}%): R$ ${entrada.toFixed(2).replace('.', ',')}
-• Saldo restante: R$ ${(valorTotal - entrada).toFixed(2).replace('.', ',')}
-  (a ser pago no dia do evento)
-
-──────────────────────────────────────────────────────────
+• Entrada (${percentualEntrada}%): R$ ${entradaRecibo.toFixed(2).replace('.', ',')}
+• Saldo restante: R$ ${(valorTotal - entradaRecibo).toFixed(2).replace('.', ',')}
+  (a ser pago até o dia anterior ao evento)
 
 Data de emissão: ${new Date().toLocaleDateString('pt-BR')}
 
@@ -270,29 +322,58 @@ _________________________________
 Júlio Cesar Fermino
 CPF: 034.988.389-03
 Júlio's Pizza House
-
-══════════════════════════════════════════════════════════`;
+`;
 
     setReciboGerado(recibo);
   };
 
+  // Função melhorada para download de PDF com espaçamento reduzido
   const downloadPDF = (content: string, filename: string) => {
-    const doc = new jsPDF();
-    const lines = content.split('\n');
-    
-    doc.setFont('courier');
-    doc.setFontSize(10);
-    
-    let y = 20;
-    lines.forEach(line => {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(line, 10, y);
-      y += 5;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
+
+    doc.setFont('courier');
+    doc.setFontSize(10); // Reduzido de 11 para 10
+
+    const marginLeft = 12; // Reduzido de 15 para 12
+    const marginRight = 12; // Reduzido de 15 para 12
+    const marginTop = 15; // Reduzido de 20 para 15
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const usableWidth = pageWidth - marginLeft - marginRight;
+    const usableHeight = pageHeight - marginTop - 15; // 15mm bottom margin
     
+    // Dividir o conteúdo por quebras de página explícitas (\f)
+    const sections = content.split('\f');
+    
+    sections.forEach((section, sectionIndex) => {
+      if (sectionIndex > 0) {
+        doc.addPage();
+      }
+      
+      // Dividir o texto em linhas respeitando a largura da página
+      const lines = doc.splitTextToSize(section.trim(), usableWidth);
+      
+      let currentY = marginTop;
+      let pageCount = 0;
+      
+      for (let i = 0; i < lines.length; i++) {
+        // Verificar se precisamos de uma nova página
+        if (currentY + 5 > usableHeight) { // Reduzido de 7 para 5mm
+          doc.addPage();
+          currentY = marginTop;
+          pageCount++;
+        }
+        
+        doc.text(lines[i], marginLeft, currentY);
+        currentY += 5; // Reduzido de 7 para 5mm - espaçamento entre linhas
+      }
+    });
+
+    // Salvar o PDF
     doc.save(filename);
   };
 
@@ -378,7 +459,31 @@ Júlio's Pizza House
                   </div>
                 )}
                 
-                <div className="flex space-x-2">
+                {/* Campo de Valor de Entrada Editável */}
+                {selectedFormulario?.id === formulario.id && (
+                  <div className="mt-4 space-y-2">
+                    <label htmlFor="valorEntrada" className="text-sm font-medium text-white">
+                      Valor da Entrada (R$)
+                    </label>
+                    <Input
+                      id="valorEntrada"
+                      type="number"
+                      placeholder="Valor da Entrada"
+                      value={valorEntradaEditavel}
+                      onChange={(e) => setValorEntradaEditavel(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <Button
+                      onClick={handleSalvarValorEntrada}
+                      className="bg-blue-600 hover:bg-blue-700 text-white mt-2"
+                      size="sm"
+                    >
+                      Salvar Entrada
+                    </Button>
+                  </div>
+                )}
+                
+                <div className="flex space-x-2 mt-4">
                   <Button 
                     size="sm" 
                     onClick={() => {

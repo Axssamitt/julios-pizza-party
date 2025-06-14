@@ -14,6 +14,9 @@ interface Pizza {
 export const PizzaGallery = () => {
   const [pizzas, setPizzas] = useState<Pizza[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllSalgadas, setShowAllSalgadas] = useState(false);
+  const [showAllDoces, setShowAllDoces] = useState(false);
+
 
   useEffect(() => {
     fetchPizzas();
@@ -38,6 +41,10 @@ export const PizzaGallery = () => {
 
   const pizzasSalgadas = pizzas.filter(pizza => pizza.tipo === 'salgada');
   const pizzasDoces = pizzas.filter(pizza => pizza.tipo === 'doce');
+
+  // Limita a 3 ou mostra todas conforme o estado
+  const displayedSalgadas = showAllSalgadas ? pizzasSalgadas : pizzasSalgadas.slice(0, 3);
+  const displayedDoces = showAllDoces ? pizzasDoces : pizzasDoces.slice(0, 3);
 
   if (loading) {
     return (
@@ -93,11 +100,21 @@ export const PizzaGallery = () => {
                 Pizzas Salgadas
               </span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {pizzasSalgadas.map((pizza) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              {displayedSalgadas.map((pizza) => (
                 <PizzaCard key={pizza.id} pizza={pizza} />
               ))}
             </div>
+            {pizzasSalgadas.length > 3 && (
+              <div className="flex justify-center mt-8">
+                <button
+                  className="px-6 py-2 rounded bg-orange-500 hover:bg-orange-600 text-white font-semibold transition"
+                  onClick={() => setShowAllSalgadas((v) => !v)}
+                >
+                  {showAllSalgadas ? 'Mostrar menos' : 'Ver todas'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -109,11 +126,21 @@ export const PizzaGallery = () => {
                 Pizzas Doces
               </span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {pizzasDoces.map((pizza) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              {displayedDoces.map((pizza) => (
                 <PizzaCard key={pizza.id} pizza={pizza} />
               ))}
             </div>
+            {pizzasDoces.length > 3 && (
+              <div className="flex justify-center mt-8">
+                <button
+                  className="px-6 py-2 rounded bg-orange-500 hover:bg-orange-600 text-white font-semibold transition"
+                  onClick={() => setShowAllDoces((v) => !v)}
+                >
+                  {showAllDoces ? 'Mostrar menos' : 'Ver todas'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

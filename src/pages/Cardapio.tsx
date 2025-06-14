@@ -88,13 +88,15 @@ const Cardapio = () => {
                   Pizzas Salgadas
                 </span>
               </h2>
-              <ul className="list-none p-0 md:columns-2 lg:columns-3 gap-x-6">
-                {pizzasSalgadas.map((pizza) => (
-                  <li key={pizza.id} className="text-lg text-white p-3 bg-gray-800 rounded-md mb-3 break-inside-avoid-column shadow-md hover:bg-gray-700 transition-colors duration-200">
-                    {pizza.nome}
-                  </li>
-                ))}
-              </ul>
+              <div className="bg-gray-800 rounded-lg p-8 mb-8">
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pizzasSalgadas.map((pizza) => (
+                    <li key={pizza.id} className="text-gray-300 text-lg font-medium">
+                      • {pizza.nome}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
@@ -106,13 +108,15 @@ const Cardapio = () => {
                   Pizzas Doces
                 </span>
               </h2>
-              <ul className="list-none p-0 md:columns-2 lg:columns-3 gap-x-6">
-                {pizzasDoces.map((pizza) => (
-                  <li key={pizza.id} className="text-lg text-white p-3 bg-gray-800 rounded-md mb-3 break-inside-avoid-column shadow-md hover:bg-gray-700 transition-colors duration-200">
-                    {pizza.nome}
-                  </li>
-                ))}
-              </ul>
+              <div className="bg-gray-800 rounded-lg p-8 mb-8">
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pizzasDoces.map((pizza) => (
+                    <li key={pizza.id} className="text-gray-300 text-lg font-medium">
+                      • {pizza.nome}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 

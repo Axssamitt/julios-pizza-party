@@ -39,6 +39,45 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_email: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string | null
+          criado_em: string | null
+          descricao: string
+          email_remetente: string
+          id: string
+          smtp_host: string
+          smtp_pass: string
+          smtp_port: number
+          smtp_user: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string | null
+          criado_em?: string | null
+          descricao: string
+          email_remetente: string
+          id?: string
+          smtp_host: string
+          smtp_pass: string
+          smtp_port: number
+          smtp_user: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string | null
+          criado_em?: string | null
+          descricao?: string
+          email_remetente?: string
+          id?: string
+          smtp_host?: string
+          smtp_pass?: string
+          smtp_port?: number
+          smtp_user?: string
+        }
+        Relationships: []
+      }
       configuracoes: {
         Row: {
           ativo: boolean
@@ -128,6 +167,8 @@ export type Database = {
       }
       home_config: {
         Row: {
+          align_subtitulo_hero: string | null
+          align_titulo_hero: string | null
           atualizado_por: string | null
           endereco: string | null
           facebook_url: string | null
@@ -147,6 +188,8 @@ export type Database = {
           visivel_telefone: boolean | null
         }
         Insert: {
+          align_subtitulo_hero?: string | null
+          align_titulo_hero?: string | null
           atualizado_por?: string | null
           endereco?: string | null
           facebook_url?: string | null
@@ -166,6 +209,8 @@ export type Database = {
           visivel_telefone?: boolean | null
         }
         Update: {
+          align_subtitulo_hero?: string | null
+          align_titulo_hero?: string | null
           atualizado_por?: string | null
           endereco?: string | null
           facebook_url?: string | null
@@ -310,6 +355,7 @@ export type Database = {
           id: string
           nome: string
           senha: string
+          tipo: string | null
           updated_at: string
         }
         Insert: {
@@ -319,6 +365,7 @@ export type Database = {
           id?: string
           nome: string
           senha: string
+          tipo?: string | null
           updated_at?: string
         }
         Update: {
@@ -328,6 +375,7 @@ export type Database = {
           id?: string
           nome?: string
           senha?: string
+          tipo?: string | null
           updated_at?: string
         }
         Relationships: []
