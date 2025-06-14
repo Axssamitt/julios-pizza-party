@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CarouselImage {
   id: string;
@@ -12,14 +13,39 @@ interface CarouselImage {
 }
 
 interface HeroCarouselProps {
-  images: CarouselImage[];
+  images?: CarouselImage[];
 }
 
-export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images }) => {
+export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images = [] }) => {
+  const [carouselImages, setCarouselImages] = useState<CarouselImage[]>(images);
+  
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
-    [Autoplay({ delay: 4000, stopOnInteraction: false })]
+    [Autoplay({ delay: 4000, stopOnInteraction: false }) as any]
   );
+
+  useEffect(() => {
+    if (images.length === 0) {
+      // Carregar imagens do carrossel do banco de dados
+      const fetchCarouselImages = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('carousel_images')
+            .select('*')
+            .eq('ativo', true)
+            .order('ordem');
+          
+          if (data && !error) {
+            setCarouselImages(data);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar imagens do carrossel:', error);
+        }
+      };
+
+      fetchCarouselImages();
+    }
+  }, [images]);
 
   const scrollPrev = React.useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -29,7 +55,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images }) => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  if (!images || images.length === 0) {
+  if (!carouselImages || carouselImages.length === 0) {
     return null;
   }
 
@@ -37,7 +63,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images }) => {
     <div className="relative h-[60vh] md:h-[80vh] overflow-hidden">
       <div className="embla" ref={emblaRef}>
         <div className="embla__container flex">
-          {images.map((image) => (
+          {carouselImages.map((image) => (
             <div key={image.id} className="embla__slide flex-[0_0_100%] min-w-0 relative">
               <img
                 src={image.url_imagem}
@@ -57,7 +83,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images }) => {
         </div>
       </div>
 
-      {images.length > 1 && (
+      {carouselImages.length > 1 && (
         <>
           <Button
             variant="outline"

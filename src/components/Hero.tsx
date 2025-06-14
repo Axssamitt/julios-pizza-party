@@ -15,8 +15,8 @@ export const Hero = () => {
   const [config, setConfig] = useState<HomeConfig>({
     titulo_hero: 'As Melhores Pizzas de Londrina',
     subtitulo_hero: 'Sabor autêntico para seus eventos. Buffet de pizzas artesanais feitas com ingredientes frescos e muito amor.',
-    align_titulo_hero: 'left', // Default value
-    align_subtitulo_hero: 'left' // Default value
+    align_titulo_hero: 'left',
+    align_subtitulo_hero: 'left'
   });
 
   useEffect(() => {
