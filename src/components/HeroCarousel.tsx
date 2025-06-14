@@ -74,7 +74,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images = [] }) => {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center text-white px-4">
                   <h1 className="text-4xl md:text-6xl font-bold mb-4">
-                    {image.titulo}
+                    <span className="bg-gradient-to-r from-pink-400 to-purple-500 bg-clip-text text-transparent">
+                      {image.titulo}
+                    </span>
                   </h1>
                 </div>
               </div>
