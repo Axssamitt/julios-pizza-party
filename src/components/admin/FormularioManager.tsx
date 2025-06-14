@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, Trash2, Calendar, Clock, Users, Phone, MapPin } from 'lucide-react';
+import { CalendarWithHighlight } from './CalendarWithHighlight';
 
 interface Formulario {
   id: string;
@@ -95,26 +96,21 @@ export const FormularioManager = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return ''; // Handle null or undefined dateStr
+    if (!dateStr) return '';
 
-    // Split the date string by typical delimiters to get parts.
-    // This handles 'YYYY-MM-DD' and also basic ISO string dates like 'YYYY-MM-DDTHH:mm:ssZ'
     const parts = dateStr.split(/[-T:]/); 
-    if (parts.length < 3) return 'Data inválida'; // Basic validation
+    if (parts.length < 3) return 'Data inválida';
 
     const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JavaScript Date
+    const month = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
 
     if (isNaN(year) || isNaN(month) || isNaN(day)) return 'Data inválida';
 
-
-    // Create a UTC date to avoid local timezone shifts influencing the date parts
     const utcDate = new Date(Date.UTC(year, month, day));
 
-    // Format it using toLocaleDateString, specifying UTC to keep the date parts as they are.
     return utcDate.toLocaleDateString('pt-BR', {
-      timeZone: 'UTC', // Critically important to format based on UTC date parts
+      timeZone: 'UTC',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -125,17 +121,27 @@ export const FormularioManager = () => {
     return timeStr.substring(0, 5);
   };
 
-  // Filtro por nome/cpf e data
+  // Corrigir filtro por nome/cpf e data
   const formulariosFiltrados = formularios.filter((formulario) => {
     const termo = searchTerm.trim().toLowerCase();
-    const nomeCpfMatch =
-      formulario.nome_completo.toLowerCase().includes(termo) ||
-      formulario.cpf.replace(/\D/g, '').includes(termo.replace(/\D/g, ''));
+    
+    // Melhorar filtro de nome e CPF
+    const nomeMatch = formulario.nome_completo.toLowerCase().includes(termo);
+    const cpfLimpo = formulario.cpf.replace(/\D/g, '');
+    const termoLimpo = termo.replace(/\D/g, '');
+    const cpfMatch = cpfLimpo.includes(termoLimpo);
+    
+    const nomeCpfMatch = termo === '' || nomeMatch || cpfMatch;
+    
     const dataMatch = searchDate
       ? formulario.data_evento === searchDate
       : true;
+    
     return nomeCpfMatch && dataMatch;
   });
+
+  // Obter datas únicas dos formulários para destacar no calendário
+  const datasComRegistros = [...new Set(formularios.map(f => f.data_evento))];
 
   return (
     <div className="space-y-6">
@@ -149,12 +155,10 @@ export const FormularioManager = () => {
             onChange={e => setSearchTerm(e.target.value)}
             className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm"
           />
-          <input
-            type="date"
-            placeholder="Filtrar por data"
+          <CalendarWithHighlight
             value={searchDate}
-            onChange={e => setSearchDate(e.target.value)}
-            className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm"
+            onChange={setSearchDate}
+            highlightDates={datasComRegistros}
           />
           <div className="text-sm text-gray-400 mt-1 md:mt-0 md:ml-4">
             Total: {formulariosFiltrados.length} formulários
@@ -443,4 +447,4 @@ export const FormularioManager = () => {
       </div>
     </div>
   );
-};  
+};

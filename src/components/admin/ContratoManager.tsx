@@ -6,7 +6,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { FileText, Download, Plus, Trash2 } from 'lucide-react';
 import { numberToWordsBrazilian } from '@/utils/supabaseStorage';
 import { jsPDF } from 'jspdf';
-import html2pdf from "html2pdf.js";
 
 interface Formulario {
   id: string;
@@ -22,7 +21,7 @@ interface Formulario {
   observacoes: string | null;
   status: string;
   created_at: string;
-  valor_entrada?: number | null; // Adicionado para entrada editável
+  valor_entrada?: number | null;
   itens_adicionais?: ItemAdicional[];
 }
 
@@ -55,7 +54,6 @@ export const ContratoManager = () => {
 
   useEffect(() => {
     if (selectedFormulario) {
-      // Usa os itensAdicionais do estado, pois eles são atualizados ao selecionar o formulário
       const valorTotalCalculado = calcularValorTotal(selectedFormulario.quantidade_adultos, selectedFormulario.quantidade_criancas, itensAdicionais);
       const entradaCalculada = calcularEntrada(valorTotalCalculado);
 
@@ -67,19 +65,17 @@ export const ContratoManager = () => {
     } else {
       setValorEntradaEditavel('');
     }
-  }, [selectedFormulario, configs, itensAdicionais]); // Adicionado itensAdicionais como dependência
+  }, [selectedFormulario, configs, itensAdicionais]);
 
   const handleSalvarValorEntrada = async () => {
     if (!selectedFormulario || valorEntradaEditavel === '') {
       console.error("Formulário não selecionado ou valor de entrada vazio.");
-      // TODO: Adicionar feedback visual para o usuário (ex: toast)
       return;
     }
 
     const novoValorEntrada = parseFloat(String(valorEntradaEditavel));
     if (isNaN(novoValorEntrada)) {
       console.error("Valor de entrada inválido.");
-      // TODO: Adicionar feedback visual para o usuário (ex: toast)
       return;
     }
 
@@ -87,25 +83,22 @@ export const ContratoManager = () => {
       .from('formularios_contato')
       .update({ valor_entrada: novoValorEntrada })
       .eq('id', selectedFormulario.id)
-      .select(); // .select() para obter os dados atualizados
+      .select();
 
     if (error) {
       console.error('Erro ao salvar valor da entrada:', error);
-      // TODO: Adicionar feedback visual para o usuário (ex: toast de erro)
     } else {
       console.log('Valor da entrada salvo com sucesso:', data);
-      // TODO: Adicionar feedback visual para o usuário (ex: toast de sucesso)
       
-      // Atualiza o estado local para refletir a mudança imediatamente
       setFormularios(prevFormularios => 
         prevFormularios.map(f => 
           f.id === selectedFormulario.id ? { ...f, valor_entrada: novoValorEntrada } : f
         )
       );
-      // Opcionalmente, atualizar também o selectedFormulario se ele for usado para exibir o valor em outro lugar diretamente
       setSelectedFormulario(prev => prev ? { ...prev, valor_entrada: novoValorEntrada } : null);
     }
   };
+
   const fetchFormularios = async () => {
     const { data, error } = await supabase
       .from('formularios_contato')
@@ -134,27 +127,15 @@ export const ContratoManager = () => {
   };
 
   const formatDate = (dateStr: string) => {
-     // Assuming dateStr is in 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm:ss...' format
-    // Adding 'T00:00:00' or ensuring the date is treated as local if no time is present.
-    // A common way to avoid timezone issues with date-only strings is to append time and specify UTC,
-    // or to parse parts and use Date.UTC.
-    // Given dateStr might come from Supabase 'date' type (YYYY-MM-DD)
-    // or 'timestamp' type.
+    if (!dateStr) return '';
 
-    if (!dateStr) return ''; // Handle null or undefined dateStr
-
-    // If dateStr is just a date (e.g., '2023-10-25'), append 'T00:00:00' 
-    // to ensure it's not interpreted as UTC midnight in a way that local conversion shifts it.
-    // However, the most robust way is to parse and use UTC.
     const parts = dateStr.split(/[-T:]/);
     const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JavaScript
+    const month = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
 
-    // Create a UTC date to avoid local timezone shifts
     const utcDate = new Date(Date.UTC(year, month, day));
 
-    // Format it using toLocaleDateString, specifying UTC to keep the date parts as they are.
     return utcDate.toLocaleDateString('pt-BR', {
       timeZone: 'UTC',
       day: '2-digit',
@@ -191,34 +172,30 @@ export const ContratoManager = () => {
     setItensAdicionais(itensAdicionais.filter((_, i) => i !== index));
   };
 
-  // ...existing code...
-
-const gerarContrato = (formulario: Formulario) => {
-  const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
- 
-  let entrada: number;
-  if (formulario.valor_entrada && formulario.valor_entrada > 0) {
-    entrada = formulario.valor_entrada;
-  } else {
-    // Se não houver valor_entrada definido ou for zero, calcula normalmente.
-    // itensAdicionais do estado global é o correto aqui, pois reflete a seleção atual para este formulário.
-    entrada = calcularEntrada(valorTotal); 
-  }
-  
-  const restante = valorTotal - entrada;
-  const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
-  const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
-  const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
-  
-  let itensTexto = '';
-  if (itensAdicionais.length > 0) {
-    itensTexto = '\n\nITENS ADICIONAIS:\n';
-    itensAdicionais.forEach(item => {
-      itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
-    });
-  }
-  
-  const contrato = `
+  const gerarContrato = (formulario: Formulario) => {
+    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
+   
+    let entrada: number;
+    if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+      entrada = formulario.valor_entrada;
+    } else {
+      entrada = calcularEntrada(valorTotal); 
+    }
+    
+    const restante = valorTotal - entrada;
+    const valorAdulto = parseFloat(configs.valor_adulto || '55.00');
+    const valorCrianca = parseFloat(configs.valor_crianca || '27.00');
+    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+    
+    let itensTexto = '';
+    if (itensAdicionais.length > 0) {
+      itensTexto = '\n\nITENS ADICIONAIS:\n';
+      itensAdicionais.forEach(item => {
+        itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
+      });
+    }
+    
+    const contrato = `
 JULIO'S PIZZA HOUSE
 CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
@@ -296,25 +273,22 @@ Júlio Cesar Fermino
 CPF: 034.988.389-03
 `;
 
-  setContratoGerado(contrato);
-};
+    setContratoGerado(contrato);
+  };
 
-// ...existing code...
   const gerarRecibo = (formulario: Formulario) => {
-  const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
-  
-  let entradaRecibo: number;
-  if (formulario.valor_entrada && formulario.valor_entrada > 0) {
-    entradaRecibo = formulario.valor_entrada;
-  } else {
-    // Se não houver valor_entrada definido ou for zero, calcula normalmente.
-    entradaRecibo = calcularEntrada(valorTotal);
-  }
-  
-  const percentualEntrada = parseFloat(configs.percentual_entrada || '40'); // Mantém para exibição, mesmo que a entrada seja manual
-  
-  
-  const recibo = `
+    const valorTotal = calcularValorTotal(formulario.quantidade_adultos, formulario.quantidade_criancas, itensAdicionais);
+    
+    let entradaRecibo: number;
+    if (formulario.valor_entrada && formulario.valor_entrada > 0) {
+      entradaRecibo = formulario.valor_entrada;
+    } else {
+      entradaRecibo = calcularEntrada(valorTotal);
+    }
+    
+    const percentualEntrada = parseFloat(configs.percentual_entrada || '40');
+    
+    const recibo = `
 JULIO'S PIZZA HOUSE
 RECIBO DE ENTRADA
 
@@ -350,40 +324,58 @@ CPF: 034.988.389-03
 Júlio's Pizza House
 `;
 
-  setReciboGerado(recibo);
-};
+    setReciboGerado(recibo);
+  };
 
-
-const printPDF = (content: string, filename: string) => {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-
-  doc.setFont('courier');
-  doc.setFontSize(11);
-
-  const marginLeft = 15;
-  const marginRight = 15;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const usableWidth = pageWidth - marginLeft - marginRight;
-
-  const sections = content.split('\f');
-
-  sections.forEach((section, index) => {
-    doc.text(section, marginLeft, 20, {
-      maxWidth: usableWidth,
-      align: 'left'
+  // Função melhorada para download de PDF com todas as páginas
+  const downloadPDF = (content: string, filename: string) => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
 
-    if (index < sections.length - 1) {
-      doc.addPage();
-    }
-  });
+    doc.setFont('courier');
+    doc.setFontSize(11);
 
-  doc.output('dataurlnewwindow');
-};
+    const marginLeft = 15;
+    const marginRight = 15;
+    const marginTop = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const usableWidth = pageWidth - marginLeft - marginRight;
+    const usableHeight = pageHeight - marginTop - 20; // 20mm bottom margin
+    
+    // Dividir o conteúdo por quebras de página explícitas (\f)
+    const sections = content.split('\f');
+    
+    sections.forEach((section, sectionIndex) => {
+      if (sectionIndex > 0) {
+        doc.addPage();
+      }
+      
+      // Dividir o texto em linhas respeitando a largura da página
+      const lines = doc.splitTextToSize(section.trim(), usableWidth);
+      
+      let currentY = marginTop;
+      let pageCount = 0;
+      
+      for (let i = 0; i < lines.length; i++) {
+        // Verificar se precisamos de uma nova página
+        if (currentY + 7 > usableHeight) { // 7mm é aproximadamente a altura de uma linha
+          doc.addPage();
+          currentY = marginTop;
+          pageCount++;
+        }
+        
+        doc.text(lines[i], marginLeft, currentY);
+        currentY += 7; // Espaçamento entre linhas
+      }
+    });
+
+    // Salvar o PDF
+    doc.save(filename);
+  };
 
   return (
     <div className="space-y-6">
@@ -483,7 +475,7 @@ const printPDF = (content: string, filename: string) => {
                     />
                     <Button
                       onClick={handleSalvarValorEntrada}
-                      className="bg-blue-600 hover:bg-blue-700 text-white mt-2" // Adicionado mt-2 para espaço
+                      className="bg-blue-600 hover:bg-blue-700 text-white mt-2"
                       size="sm"
                     >
                       Salvar Entrada
@@ -491,7 +483,7 @@ const printPDF = (content: string, filename: string) => {
                   </div>
                 )}
                 
-                <div className="flex space-x-2 mt-4"> {/* Adicionado mt-4 para separar dos campos acima */}
+                <div className="flex space-x-2 mt-4">
                   <Button 
                     size="sm" 
                     onClick={() => {
@@ -543,14 +535,14 @@ const printPDF = (content: string, filename: string) => {
                 </CardTitle>
                 <Button 
                   size="sm"
-                  onClick={() => printPDF(
+                  onClick={() => downloadPDF(
                     contratoGerado || reciboGerado,
                     `${contratoGerado ? 'contrato' : 'recibo'}_${selectedFormulario?.nome_completo.replace(/\s+/g, '_')}.pdf`
                   )}
                   className="bg-orange-600 hover:bg-orange-700"
                 >
                   <Download className="mr-1" size={14} />
-                  Imprimir PDF
+                  Download PDF
                 </Button>
               </div>
             </CardHeader>
