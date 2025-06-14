@@ -189,7 +189,7 @@ export const ContratoManager = () => {
     
     let itensTexto = '';
     if (itensAdicionais.length > 0) {
-      itensTexto = '\n\nITENS ADICIONAIS:\n';
+      itensTexto = '\nITENS ADICIONAIS:\n';
       itensAdicionais.forEach(item => {
         itensTexto += `• ${item.descricao}: ${item.quantidade}x R$ ${item.valor.toFixed(2).replace('.', ',')} = R$ ${(item.valor * item.quantidade).toFixed(2).replace('.', ',')}\n`;
       });
@@ -327,7 +327,7 @@ Júlio's Pizza House
     setReciboGerado(recibo);
   };
 
-  // Função melhorada para download de PDF com todas as páginas
+  // Função melhorada para download de PDF com espaçamento reduzido
   const downloadPDF = (content: string, filename: string) => {
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -336,15 +336,15 @@ Júlio's Pizza House
     });
 
     doc.setFont('courier');
-    doc.setFontSize(11);
+    doc.setFontSize(10); // Reduzido de 11 para 10
 
-    const marginLeft = 15;
-    const marginRight = 15;
-    const marginTop = 20;
+    const marginLeft = 12; // Reduzido de 15 para 12
+    const marginRight = 12; // Reduzido de 15 para 12
+    const marginTop = 15; // Reduzido de 20 para 15
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const usableWidth = pageWidth - marginLeft - marginRight;
-    const usableHeight = pageHeight - marginTop - 20; // 20mm bottom margin
+    const usableHeight = pageHeight - marginTop - 15; // 15mm bottom margin
     
     // Dividir o conteúdo por quebras de página explícitas (\f)
     const sections = content.split('\f');
@@ -362,14 +362,14 @@ Júlio's Pizza House
       
       for (let i = 0; i < lines.length; i++) {
         // Verificar se precisamos de uma nova página
-        if (currentY + 7 > usableHeight) { // 7mm é aproximadamente a altura de uma linha
+        if (currentY + 5 > usableHeight) { // Reduzido de 7 para 5mm
           doc.addPage();
           currentY = marginTop;
           pageCount++;
         }
         
         doc.text(lines[i], marginLeft, currentY);
-        currentY += 7; // Espaçamento entre linhas
+        currentY += 5; // Reduzido de 7 para 5mm - espaçamento entre linhas
       }
     });
 

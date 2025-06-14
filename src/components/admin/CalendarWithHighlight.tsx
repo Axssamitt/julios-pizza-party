@@ -11,12 +11,14 @@ interface CalendarWithHighlightProps {
   value: string;
   onChange: (date: string) => void;
   highlightDates: string[];
+  statusMap?: Record<string, string>; // data -> status
 }
 
 export const CalendarWithHighlight: React.FC<CalendarWithHighlightProps> = ({
   value,
   onChange,
-  highlightDates
+  highlightDates,
+  statusMap = {}
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     value ? new Date(value) : undefined
@@ -33,9 +35,24 @@ export const CalendarWithHighlight: React.FC<CalendarWithHighlightProps> = ({
     setOpen(false);
   };
 
+  const getDateStatus = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return statusMap[dateStr];
+  };
+
   const isHighlighted = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return highlightDates.includes(dateStr);
+  };
+
+  const isPending = (date: Date) => {
+    const status = getDateStatus(date);
+    return status === 'pendente';
+  };
+
+  const isConfirmed = (date: Date) => {
+    const status = getDateStatus(date);
+    return status === 'confirmado';
   };
 
   return (
@@ -59,10 +76,14 @@ export const CalendarWithHighlight: React.FC<CalendarWithHighlightProps> = ({
           onSelect={handleDateSelect}
           className={cn("p-3 pointer-events-auto")}
           modifiers={{
-            highlighted: isHighlighted
+            highlighted: isHighlighted,
+            pending: isPending,
+            confirmed: isConfirmed
           }}
           modifiersClassNames={{
-            highlighted: "bg-orange-500 text-white hover:bg-orange-600"
+            highlighted: "bg-blue-500 text-white hover:bg-blue-600",
+            pending: "bg-orange-500 text-white hover:bg-orange-600",
+            confirmed: "bg-green-500 text-white hover:bg-green-600"
           }}
         />
         {selectedDate && (

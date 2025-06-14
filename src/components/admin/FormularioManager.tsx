@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,15 +122,17 @@ export const FormularioManager = () => {
     return timeStr.substring(0, 5);
   };
 
-  // Corrigir filtro por nome/cpf e data
+  // Filtro aprimorado por nome (parcial) e CPF (completo)
   const formulariosFiltrados = formularios.filter((formulario) => {
     const termo = searchTerm.trim().toLowerCase();
     
-    // Melhorar filtro de nome e CPF
+    // Busca parcial por nome (aceita partes do nome)
     const nomeMatch = formulario.nome_completo.toLowerCase().includes(termo);
+    
+    // Busca exata por CPF (removendo formatação)
     const cpfLimpo = formulario.cpf.replace(/\D/g, '');
     const termoLimpo = termo.replace(/\D/g, '');
-    const cpfMatch = cpfLimpo.includes(termoLimpo);
+    const cpfMatch = termoLimpo && cpfLimpo === termoLimpo;
     
     const nomeCpfMatch = termo === '' || nomeMatch || cpfMatch;
     
@@ -142,6 +145,18 @@ export const FormularioManager = () => {
 
   // Obter datas únicas dos formulários para destacar no calendário
   const datasComRegistros = [...new Set(formularios.map(f => f.data_evento))];
+  
+  // Criar mapeamento de data para status (para destacar no calendário)
+  const statusMap = formularios.reduce((acc, form) => {
+    const data = form.data_evento;
+    // Se já existe uma data, priorizar: pendente > confirmado > cancelado
+    if (!acc[data] || 
+        (form.status === 'pendente' && acc[data] !== 'pendente') ||
+        (form.status === 'confirmado' && acc[data] === 'cancelado')) {
+      acc[data] = form.status;
+    }
+    return acc;
+  }, {} as Record<string, string>);
 
   return (
     <div className="space-y-6">
@@ -150,7 +165,7 @@ export const FormularioManager = () => {
         <div className="flex flex-col md:flex-row gap-2 md:items-center">
           <input
             type="text"
-            placeholder="Filtrar por nome ou CPF"
+            placeholder="Filtrar por nome (parcial) ou CPF (completo)"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm"
@@ -159,6 +174,7 @@ export const FormularioManager = () => {
             value={searchDate}
             onChange={setSearchDate}
             highlightDates={datasComRegistros}
+            statusMap={statusMap}
           />
           <div className="text-sm text-gray-400 mt-1 md:mt-0 md:ml-4">
             Total: {formulariosFiltrados.length} formulários
