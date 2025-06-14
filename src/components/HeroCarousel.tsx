@@ -1,110 +1,96 @@
 
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { supabase } from '@/integrations/supabase/client';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 
 interface CarouselImage {
   id: string;
-  url_imagem: string;
   titulo: string;
+  url_imagem: string;
+  ordem: number;
 }
 
-interface HeroCarouselProps {
-  images?: CarouselImage[];
-}
-
-export const HeroCarousel: React.FC<HeroCarouselProps> = ({ images = [] }) => {
-  const [carouselImages, setCarouselImages] = useState<CarouselImage[]>(images);
-  
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    { loop: true },
-    [Autoplay({ delay: 4000, stopOnInteraction: false }) as any]
-  );
+export const HeroCarousel = () => {
+  const [images, setImages] = useState<CarouselImage[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (images.length === 0) {
-      // Carregar imagens do carrossel do banco de dados
-      const fetchCarouselImages = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('carousel_images')
-            .select('*')
-            .eq('ativo', true)
-            .order('ordem');
-          
-          if (data && !error) {
-            setCarouselImages(data);
-          }
-        } catch (error) {
-          console.error('Erro ao carregar imagens do carrossel:', error);
-        }
-      };
+    const fetchImages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('carousel_images')
+          .select('*')
+          .eq('ativo', true)
+          .order('ordem');
+        
+        if (error) throw error;
+        setImages(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar imagens do carrossel:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      fetchCarouselImages();
-    }
-  }, [images]);
+    fetchImages();
+  }, []);
 
-  const scrollPrev = React.useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
+  if (loading) {
+    return (
+      <div className="w-full h-64 bg-gray-800/50 backdrop-blur-sm rounded-lg animate-pulse flex items-center justify-center">
+        <span className="text-gray-400">Carregando...</span>
+      </div>
+    );
+  }
 
-  const scrollNext = React.useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  if (!carouselImages || carouselImages.length === 0) {
-    return null;
+  if (images.length === 0) {
+    return (
+      <div className="w-full h-64 bg-gray-800/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
+        <span className="text-gray-400">Nenhuma imagem encontrada</span>
+      </div>
+    );
   }
 
   return (
-    <div className="relative h-[60vh] md:h-[80vh] overflow-hidden">
-      <div className="embla" ref={emblaRef}>
-        <div className="embla__container flex">
-          {carouselImages.map((image) => (
-            <div key={image.id} className="embla__slide flex-[0_0_100%] min-w-0 relative">
-              <img
-                src={image.url_imagem}
-                alt={image.titulo}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-40" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-white px-4">
-                  <h1 className="text-4xl md:text-6xl font-bold mb-4">
-                    <span className="bg-gradient-to-r from-pink-400 to-purple-500 bg-clip-text text-transparent">
-                      {image.titulo}
-                    </span>
-                  </h1>
+    <Carousel 
+      className="w-full max-w-xs md:max-w-md lg:max-w-lg mx-auto"
+      opts={{
+        align: "start",
+        loop: true,
+      }}
+      plugins={[
+        Autoplay({
+          delay: 4000,
+          stopOnInteraction: false, // <-- garante autoplay mesmo após interação
+          stopOnMouseEnter: false,  // <-- não pausa ao passar mouse (desktop)
+        }),
+      ]}
+    >
+      <CarouselContent>
+        {images.map((image) => (
+          <CarouselItem key={image.id}>
+            <Card className="border-0 bg-transparent shadow-none">
+              <CardContent className="p-2">
+                <div className="aspect-square relative overflow-hidden rounded-lg shadow-2xl">
+                  <img
+                    src={image.url_imagem}
+                    alt={image.titulo}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <h3 className="text-white font-semibold text-sm">{image.titulo}</h3>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {carouselImages.length > 1 && (
-        <>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/20 border-white/30 text-white hover:bg-white/30"
-            onClick={scrollPrev}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/20 border-white/30 text-white hover:bg-white/30"
-            onClick={scrollNext}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </>
-      )}
-    </div>
+              </CardContent>
+            </Card>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious className="text-orange-400 border-orange-400 hover:bg-orange-400 hover:text-white" />
+      <CarouselNext className="text-orange-400 border-orange-400 hover:bg-orange-400 hover:text-white" />
+    </Carousel>
   );
 };
